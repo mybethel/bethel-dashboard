@@ -11,6 +11,10 @@
  * Adds body classes if certain regions have content.
  */
 function podcaster_preprocess_html(&$variables) {
+  drupal_add_css(libraries_get_path('bootstrap') . '/css/bootstrap.min.css');
+  drupal_add_css(libraries_get_path('bootstrap') . '/css/bootstrap-theme.min.css');
+  drupal_add_js(libraries_get_path('bootstrap') . '/css/bootstrap.min.js');
+
   if (!empty($variables['page']['featured'])) {
     $variables['attributes']['class'][] = 'featured';
   }
