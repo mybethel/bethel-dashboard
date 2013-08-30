@@ -1,7 +1,11 @@
+.container {
+	max-width: 730px;
+	padding-top: 20px;
+}
+
 #header {
   margin-bottom: 30px;
-  border-bottom: 1px solid 
-#e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 #header h3 {
@@ -9,4 +13,48 @@
   margin-bottom: 0;
   line-height: 40px;
   padding-bottom: 19px;
+}
+
+.front.not-logged-in .tabs {
+  display: none;
+}
+
+.front.not-logged-in .title,
+.user-login-form {
+  max-width: 330px;
+  padding: 15px;
+  margin: 0 auto;
+}
+
+.front.not-logged-in .title {
+  padding-bottom: 0;
+}
+
+.user-login-form {
+  padding-top: 0;
+}
+
+.user-login-form .form-control {
+  padding: 10px;
+  font-size: 16px;
+  height: auto;
+}
+
+.user-login-form input[type="text"] {
+  margin-bottom: -15px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.user-login-form input[type="password"] {
+  margin-bottom: 10px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+@media all and (max-width: 560px) {
+  .nav>li>a {
+    padding: 7px;
+    margin-top: 6px;
+  }
 }

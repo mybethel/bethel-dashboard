@@ -4,6 +4,19 @@
  * @file
  * Functions to support theming in the Bartik theme.
  */
+ 
+function podcaster_library_info() {
+  $libraries['drupal.node'] = array(
+    'title' => 'Node',
+    'version' => VERSION,
+    'js' => array(
+      drupal_get_path('module', 'node') . '/node.js' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+    ),
+  );
+}
 
 /**
  * Implements hook_preprocess_HOOK() for html.tpl.php.
@@ -13,7 +26,7 @@
 function podcaster_preprocess_html(&$variables) {
   drupal_add_css(libraries_get_path('bootstrap') . '/css/bootstrap.min.css');
   drupal_add_css(libraries_get_path('bootstrap') . '/css/bootstrap-theme.min.css');
-  drupal_add_js(libraries_get_path('bootstrap') . '/css/bootstrap.min.js');
+  drupal_add_js(libraries_get_path('bootstrap') . '/js/bootstrap.min.js');
 
   if (!empty($variables['page']['featured'])) {
     $variables['attributes']['class'][] = 'featured';
@@ -154,4 +167,24 @@ function podcaster_field__taxonomy_term_reference($variables) {
   $output = '<div ' . $variables['attributes'] . '>' . $output . '</div>';
 
   return $output;
+}
+
+function podcaster_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'user_login_form') {
+    $form['name']['#title'] = '';
+    $form['name']['#description'] = '';
+    $form['name']['#attributes']['class'] = array('form-control');
+    $form['name']['#attributes']['placeholder'] = 'Username';
+    $form['name']['#required'] = FALSE;
+    
+    $form['pass']['#title'] = '';
+    $form['pass']['#description'] = '';
+    $form['pass']['#attributes']['class'] = array('form-control');
+    $form['pass']['#attributes']['placeholder'] = 'Password';
+    $form['pass']['#required'] = FALSE;
+    
+    $form['actions']['submit']['#attributes']['class'] = array('btn', 'btn-lg', 'btn-primary', 'btn-block');
+    
+    drupal_set_title('Please log in');
+  }
 }
