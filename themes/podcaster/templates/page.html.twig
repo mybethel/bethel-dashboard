@@ -94,6 +94,14 @@
       </a>
     {% endif %}
 
+    {{ page.header }}
+
+    {% if main_menu %}
+      <nav id ="main-menu" class="nav pull-right" role="navigation">
+        {{ main_menu }}
+      </nav> <!-- /#main-menu -->
+    {% endif %}
+
     {% if site_name or site_slogan %}
       <div id="name-and-slogan"{% if hide_site_name and hide_site_slogan %} class="visually-hidden"{% endif %}>
         {% if site_name %}
@@ -108,14 +116,6 @@
           </div>
         {% endif %}
       </div><!-- /#name-and-slogan -->
-    {% endif %}
-
-    {{ page.header }}
-
-    {% if main_menu %}
-      <nav id ="main-menu" class="nav pull-right" role="navigation">
-        {{ main_menu }}
-      </nav> <!-- /#main-menu -->
     {% endif %}
   </div></header> <!-- /.section, /#header-->
 
