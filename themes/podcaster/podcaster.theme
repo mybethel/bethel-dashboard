@@ -39,8 +39,8 @@ function podcaster_preprocess_html(&$variables) {
 function podcaster_preprocess_page(&$variables) {
   // Pass the main menu and secondary menu to the template as render arrays.
   if (!empty($variables['main_menu'])) {
-    $variables['main_menu']['#attributes']['id'] = 'main-menu-links';
-    $variables['main_menu']['#attributes']['class'] = array('links', 'clearfix');
+    $variables['main_menu']['#attributes']['id'] = 'primary-menu-links';
+    $variables['main_menu']['#attributes']['class'] = array('nav', 'nav-pills');
   }
   if (!empty($variables['secondary_menu'])) {
     $variables['secondary_menu']['#attributes']['id'] = 'secondary-menu-links';

@@ -1,16 +1,9 @@
 name: Podcaster
 type: theme
-description: 'A flexible, recolorable theme with many regions and a responsive, mobile-first layout.'
+description: 'Initial Beta theme based on Bootstrap.'
 package: Core
-version: VERSION
+version: Beta
 core: 8.x
-stylesheets:
-  all:
-    - css/layout.css
-    - css/style.css
-    - css/colors.css
-  print:
-    - css/print.css
 regions:
   header: Header
   help: Help

@@ -79,7 +79,7 @@
  * @ingroup themeable
  */
 #}
-<div id="page-wrapper"><div id="page">
+<div id="page-wrapper" class="container"><div id="page">
 
   <header id="header" class="{{ secondary_menu ? 'with-secondary-menu' : 'without-secondary-menu' }}" role="banner"><div class="section clearfix">
    {% if secondary_menu %}
@@ -97,18 +97,9 @@
     {% if site_name or site_slogan %}
       <div id="name-and-slogan"{% if hide_site_name and hide_site_slogan %} class="visually-hidden"{% endif %}>
         {% if site_name %}
-          {% if title %}
             <div id="site-name"{% if hide_site_name %} class="visually-hidden"{% endif %}>
-              <strong>
-                <a href="{{ front_page }}" title="{{ 'Home'|t }}" rel="home"><span>{{ site_name }}</span></a>
-              </strong>
+              <h3 class="text-muted">{{ site_name }}</h3>
             </div>
-          {# Use h1 when the content title is empty #}
-          {% else %}
-            <h1 id="site-name"{% if hide_site_name %} class="visually-hidden" {% endif %}>
-              <a href="{{ front_page }}" title="{{ 'Home'|t }}" rel="home"><span>{{ site_name }}</span></a>
-            </h1>
-          {% endif %}
         {% endif %}
 
         {% if site_slogan %}
@@ -122,7 +113,7 @@
     {{ page.header }}
 
     {% if main_menu %}
-      <nav id ="main-menu" class="navigation" role="navigation">
+      <nav id ="main-menu" class="nav pull-right" role="navigation">
         {{ main_menu }}
       </nav> <!-- /#main-menu -->
     {% endif %}
