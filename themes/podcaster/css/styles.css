@@ -1,6 +1,8 @@
 .container {
 	max-width: 730px;
 	padding-top: 20px;
+	padding-bottom: 20px;
+	margin-bottom: 50px;
 }
 
 #header {
@@ -57,4 +59,115 @@
     padding: 7px;
     margin-top: 6px;
   }
+}
+
+.bethel-podcaster-video-form .form-control {
+  padding-right: 65px;
+}
+
+.bethel-podcaster-video-form .btn {
+  margin-top: -44px;
+  padding: 3px 10px;
+  margin-right: 5px;
+}
+
+.node-type-podcast-feed .field-name-field-image {
+  float: left;
+  margin-right: 20px;
+  margin-bottom: 20px;
+  max-width: 100%;
+}
+
+@media all and (max-width: 560px) {
+  .node-type-podcast-feed .field-name-field-image {
+    float: none;
+    margin-right: 0;
+  }
+  .node-type-podcast-feed .field-name-field-image img {
+    margin-top: 20px;
+    max-width: 100%;
+  }
+  .node-type-podcast-feed .content > .btn {
+    width: 100%;
+  }
+}
+
+.not-logged-in.node-type-podcast-feed #main-menu,
+.not-logged-in.node-type-podcast-feed .tabs {
+  display: none;
+}
+
+.node-type-podcast-feed .content {
+  text-align: justify;
+}
+
+.node-type-podcast-feed .content > .btn {
+  margin-left: 20px;
+}
+
+.node-type-podcast-feed .field-name-field-copyright {
+  margin-top: 20px;
+  font-size: 12px;
+}
+
+#video_wrapper {
+  clear: both;
+  margin-top: 20px;
+}
+
+.image-style-hero {
+  margin-top: -30px;
+  max-width: 100%;
+  height: auto;
+}
+
+.page-user:not(.page-user-edit) #page-title {
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 10px;
+  margin-top: -53px;
+  z-index: 5;
+  position: relative;
+}
+
+#site-name a:hover {
+  text-decoration: none;
+}
+
+.messages {
+  margin-bottom: 10px;
+}
+
+.navbar {
+  background: #3c3c3c;
+}
+
+@media all and (max-width: 560px) {
+  .navbar {
+    min-height: 40px;
+  }
+  .navbar-brand {
+    font-size: 15px;
+    font-weight: bold;
+    padding: 10px;
+  }
+  .navbar p {
+    font-size: 12px;
+    margin: 0;
+    padding: 12px;
+    padding-bottom: 0;
+  }
+  .page-user:not(.page-user-edit) #page-title {
+    background: black;
+    font-size: 100%;
+    margin-top: 0;
+  }
+  #primary-menu-links li:nth-child(1) {
+    display: none;
+  }
+}
+
+.view-frontpage img {
+  max-width: 100%;
+  height: auto;
 }

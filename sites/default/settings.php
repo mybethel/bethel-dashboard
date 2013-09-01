@@ -662,3 +662,7 @@ $databases['default']['default'] = array (
 );
 $config_directories['active']['path'] = 'config_lxXBTdPyUY_D8yjK9lUp5ybO_5-DiopTMME-3w-xHeA/active';
 $config_directories['staging']['path'] = 'config_lxXBTdPyUY_D8yjK9lUp5ybO_5-DiopTMME-3w-xHeA/staging';
+
+error_reporting(E_ALL);
+ini_set('display_errors', TRUE);
+ini_set('display_startup_errors', TRUE);

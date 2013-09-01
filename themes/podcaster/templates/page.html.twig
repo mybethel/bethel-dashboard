@@ -106,7 +106,7 @@
       <div id="name-and-slogan"{% if hide_site_name and hide_site_slogan %} class="visually-hidden"{% endif %}>
         {% if site_name %}
             <div id="site-name"{% if hide_site_name %} class="visually-hidden"{% endif %}>
-              <h3 class="text-muted">{{ site_name }}</h3>
+              <a href="{{ front_page }}" title="{{ 'Home'|t }}" rel="home"><h3 class="text-muted">{{ site_name }}</h3></a>
             </div>
         {% endif %}
 
@@ -118,11 +118,9 @@
       </div><!-- /#name-and-slogan -->
     {% endif %}
   </div></header> <!-- /.section, /#header-->
-
-  {% if messages %}
-    <div id="messages"><div class="section clearfix">
-      {{ messages }}
-    </div></div> <!-- /.section, /#messages -->
+  
+  {% if hero %}
+  {{ hero }}
   {% endif %}
 
   {% if page.featured %}
@@ -132,8 +130,6 @@
   {% endif %}
 
   <div id="main-wrapper" class="clearfix"><div id="main" class="clearfix">
-    {{ breadcrumb }}
-
     <main id="content" class="column" role="main"><section class="section">
       {% if page.highlighted %}<div id="highlighted">{{ page.highlighted }}</div>{% endif %}
       <a id="main-content"></a>
@@ -144,6 +140,11 @@
           </h2>
         {% endif %}
       {{ title_suffix }}
+      {% if messages %}
+        <div id="messages"><div class="section clearfix">
+          {{ messages }}
+        </div></div> <!-- /.section, /#messages -->
+      {% endif %}
         {% if tabs %}
           <nav class="tabs" role="navigation">
             {{ tabs }}
@@ -192,11 +193,15 @@
       </div><!-- /#footer-columns -->
     {% endif %}
 
+    <div id="footer" role="contentinfo" class="clearfix">
+      <nav class="navbar navbar-inverse navbar-fixed-bottom" role="navigation">
+        <a class="navbar-brand" href="http://www.getbethel.com/" target="_blank">Bethel</a>
+        <p class="navbar-text pull-right">&copy; 2013.  <a href="http://imor.tl/" target="_blank" class="navbar-link">Ideas never die.</a></p>
+      </nav>
     {% if page.footer %}
-      <div id="footer" role="contentinfo" class="clearfix">
         {{ page.footer }}
-      </div> <!-- /#footer -->
    {% endif %}
+   </div> <!-- /#footer -->
 
   </footer></div> <!-- /.section, /#footer-wrapper -->
 

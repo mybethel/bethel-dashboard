@@ -88,6 +88,19 @@ function podcaster_preprocess_page(&$variables) {
     // Make sure the shortcut link is the first item in title_suffix.
     $variables['title_suffix']['add_or_remove_shortcut']['#weight'] = -100;
   }
+  
+  if (isset($variables['page']['content']['podcaster.content']['content'][0]['user_picture']['#items'])) {
+    $image = array(
+      'style_name' => 'hero',
+      'uri' => $variables['page']['content']['podcaster.content']['content'][0]['user_picture']['#items'][0]['entity']->values['uri']['und'],
+      'width' => '',
+      'height' => '',
+    );
+    
+    unset($variables['page']['content']['podcaster.content']['content'][0]['user_picture']);
+    
+    $variables['hero'] = theme_image_style($image);
+  }
 }
 
 /**
@@ -186,5 +199,21 @@ function podcaster_form_alter(&$form, &$form_state, $form_id) {
     $form['actions']['submit']['#attributes']['class'] = array('btn', 'btn-lg', 'btn-primary', 'btn-block');
     
     drupal_set_title('Please log in');
+  }
+}
+
+function podcaster_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  if ($root_path == 'user/%') {
+    $tabs = $data['tabs'][0];
+    
+    foreach ($tabs as $path => $tab) {
+      $title = $data['tabs'][0][$path]['#link']['title'];
+  
+      if ($title == "View") {
+        $data['tabs'][0][$path]['#link']['title'] = "My Podcasts";
+      } else if ($title == "Edit") {
+        $data['tabs'][0][$path]['#link']['title'] = "Edit Account";
+      }
+    }
   }
 }
