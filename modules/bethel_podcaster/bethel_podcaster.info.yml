@@ -1,0 +1,5 @@
+name: Podcaster
+type: module
+description: 'Podcasting automation.'
+package: Bethel
+core: 8.x

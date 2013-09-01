@@ -1,0 +1,22 @@
+<div id="video_wrapper">
+{% for video in videos %}
+  <div class="media">
+    <a class="pull-left" href="{{ video.url }}" target="_blank">
+      <img class="media-object" src="{{ video.thumbnail }}" alt="{{ video.title }}">
+    </a>
+    <div class="media-body">
+      <h4 class="media-heading">{{ video.title }} <span class="badge">{{ video.duration }}</span></h4>
+      <p class="text-muted">
+      {% if video.description %}
+        {{ video.description }}
+      {% elseif edit_access %}
+        Podcaster recommends adding a short description for each item in your podcast.  To do this, edit the video on Vimeo and add a description.  This message is not shown to your visitors.
+      {% endif %}
+      </p>
+    </div>
+  </div>
+  {% if video.form and edit_access %}
+  {{ video.form }}
+  {% endif %}
+{% endfor %}
+</div>

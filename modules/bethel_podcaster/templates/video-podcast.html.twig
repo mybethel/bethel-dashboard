@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+
+<channel>
+  <title>{{ title }}</title>
+  <link>{{ website }}</link>
+  <language>en-us</language>
+  <copyright>{{ copyright }}</copyright>
+  <description>{{ description }}</description>	
+  <itunes:owner>
+    <itunes:name>{{ author }}</itunes:name>
+    <itunes:email>{{ author_email }}</itunes:email>
+  </itunes:owner>
+  <itunes:subtitle>{{ short_description }}</itunes:subtitle>
+  <itunes:summary>{{ description }}</itunes:summary>
+  <itunes:author>{{ author }}</itunes:author>
+  <itunes:explicit>no</itunes:explicit>
+  <itunes:image href="{{ image }}" />
+  <itunes:keywords>{{ keywords }}</itunes:keywords>
+  <itunes:category text="Religion &amp; Spirituality">
+    <itunes:category text="Christianity" />
+  </itunes:category>
+  <atom:link href="{{ feed }}" rel="self" type="application/rss+xml" />
+
+{% for item in items %}
+  <item>
+    <title>{{ item.title }}</title>
+    <pubDate>{{ item.date }}</pubDate>
+    <guid isPermaLink="false">{{ item.link }}</guid>
+    <itunes:author>{{ author }}</itunes:author>
+    <description>{{ item.description }}</description>
+    <itunes:summary>{{ item.description }}</itunes:summary>
+    <itunes:duration>{{ item.duration }}</itunes:duration>
+    <itunes:explicit>no</itunes:explicit>
+    <itunes:keywords>{{ item.keywords }}</itunes:keywords>
+    <itunes:image href="{{ item.image }}" />
+    <enclosure url="{{ item.video }}" length="{{ item.video_size }}" type="video/mp4" />
+    <itunes:block>no</itunes:block>
+  </item>
+{% endfor %}
+</channel>
+
+</rss>

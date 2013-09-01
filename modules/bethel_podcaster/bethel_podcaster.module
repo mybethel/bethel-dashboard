@@ -1,0 +1,166 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function bethel_podcaster_menu() {
+  $items['node/%id/podcast.xml'] = array(
+    'title' => 'Podcast Feed',
+    'route_name' => 'bethel_podcaster.podcast_feed',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'weight' => 100,
+  );
+  return $items;
+}
+
+function bethel_podcaster_theme() {
+  return array(
+    'video_wrapper' => array(
+      'template' => 'video-wrapper',
+      'render element' => 'content',
+    ),
+  );
+}
+
+function bethel_podcaster_node_view($node, $display, $view_mode) {
+  if ($node->values['type']['und'] == "podcast_feed" && $view_mode == 'full') {
+    global $base_url;
+    $subscribe_link = $base_url . '/' . node_uri($node)['path'] . '/podcast.xml';
+    $node->content['podcast_subscript'] = array(
+      '#markup' => l('Subscribe', $subscribe_link, array('attributes' => array('class' => array('btn', 'btn-lg', 'btn-primary', 'pull-right')))),
+    );
+
+    $node->content['podcast_contents'] = array(
+      '#theme' => 'video_wrapper',
+      '#node' => $node,
+      '#filtered' => $node->values['field_tags']['und'],
+      '#videofeed' => 'hbcoakville',
+      '#weight' => '100',
+    );
+    
+    $config = Drupal::config('bethel.podcaster');
+  }
+}
+
+function retrieve_remote_file_size($url) {
+  $headers = get_headers($url, 1);
+  if (isset($headers['Content-Length'])) return $headers['Content-Length'];
+  if (isset($headers['Content-length'])) return $headers['Content-length'];
+
+  $c = curl_init();
+  curl_setopt_array($c, array(
+    CURLOPT_URL => $url,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => array('User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3'),
+  ));
+  curl_exec($c);
+
+  return curl_getinfo($c, CURLINFO_SIZE_DOWNLOAD);
+}
+
+/**
+ * Prepares variables for video wrapper templates.
+ *
+ * Default template: video-wrapper.html.twig.
+ */
+function template_preprocess_video_wrapper(&$variables) {
+  $rawdata = file_get_contents('http://vimeo.com/api/v2/' . $variables['content']['#videofeed'] . '/videos.json');
+  
+  $matching_tags = array();
+  
+  foreach ($variables['content']['#filtered'] as $tag) {
+    $tag_entity = entity_load('taxonomy_term', $tag['target_id']);
+    $matching_tags[] = $tag_entity->values['name']['und'];
+  }
+  
+  $variables['edit_access'] = node_access('update', $variables['content']['#node']);
+
+  // Decode the JSON into an array for parsing.
+  $videos = \Drupal\Component\Utility\Json::decode($rawdata);
+  $config = Drupal::config('bethel.podcaster');
+  
+  //$novideo = 0;
+
+  // Evaluate each video that Vimeo returns for the user.
+  foreach ($videos as $video) {
+    $tags = explode(', ', $video['tags']);
+
+    foreach ($tags as $tag) {
+      // Only include videos in the podcast that match tags the user has set.
+      if (in_array($tag, $matching_tags)) {
+        $durationformat = $video['duration'] < 3600 ? 'i:s' : 'H:i:s';
+        $variables['videos'][$video['id']]['title'] = $video['title'];
+        $variables['videos'][$video['id']]['url'] = $video['url'];
+        $variables['videos'][$video['id']]['description'] = $video['description'];
+        $variables['videos'][$video['id']]['length'] = $video['duration'];
+        $variables['videos'][$video['id']]['thumbnail'] = $video['thumbnail_small'];
+        $variables['videos'][$video['id']]['duration'] = date($durationformat, $video['duration']);
+        $variables['videos'][$video['id']]['video'] = $config->get('video_url.' . $video['id']);
+        $variables['videos'][$video['id']]['form'] = drupal_get_form('bethel_podcaster_video_form_' . $video['id'], $video['id']);
+        
+        /*if (!$variables['videos'][$video['id']]['video']) {
+          $novideo++;
+        }*/
+      }
+    }
+  }
+
+  /*if ($novideo > 0 && $variables['edit_access']) {
+    drupal_set_message(t($novideo . ' items in your podcast do not contain a URL to a valid video file.  These items will not be visible in iTunes until a video file is added.'), 'warning');
+  }*/
+}
+
+function bethel_podcaster_video_form($form, &$form_state, $id) {
+  $video = Drupal::config('bethel.podcaster')->get('video_url.' . $id);
+  $button_class = isset($video) ? 'btn-default' : 'btn-primary';
+
+  $form['video_url'] = array(
+    '#type' => 'textfield',
+    '#default_value' => $video,
+    '#required' => TRUE,
+    '#attributes' => array(
+      'class' => array('form-control'),
+    ),
+  );
+  $form['video_id'] = array('#type' => 'hidden', '#value' => $id);
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#attributes' => array(
+      'class' => array('btn', $button_class, 'btn-sm', 'pull-right'),
+    ),
+    '#name' => $id,
+  );
+
+  return $form;
+}
+
+function bethel_podcaster_forms($form_id) {
+  if (preg_match('/^bethel_podcaster_video_form_\d+$/', $form_id)) {
+  return array(
+    $form_id => array(
+      'callback' => 'bethel_podcaster_video_form',
+    ),
+  );
+  }
+}
+
+function bethel_podcaster_video_form_validate($form, &$form_state) {
+  // Validation logic.
+}
+
+function bethel_podcaster_video_form_submit($form, &$form_state) {  
+  $config = Drupal::config('bethel.podcaster');
+  
+  $config->set('video_url.' . $form_state['values']['video_id'], $form_state['values']['video_url'])->save();
+  $config->set('video_size.' . $form_state['values']['video_id'], retrieve_remote_file_size($form_state['values']['video_url']))->save();
+  
+  drupal_set_message(t('Saved video file location for #' . $form_state['values']['video_id'] . '.  This video will now be visible in iTunes'), 'status');
+}
+
+function bethel_podcaster_user_format_name_alter(&$name, $account) {
+  if (isset($account->values['field_name']['und'])) {
+    $name = $account->values['field_name']['und'][0]['value'];
+  }
+}
