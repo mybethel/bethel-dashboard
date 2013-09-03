@@ -223,7 +223,7 @@ function node_uri(EntityInterface $node) {
  * Implements hook_admin_paths().
  */
 function node_admin_paths() {
-  if (variable_get('node_admin_theme')) {
+  if (Drupal::config('node.settings')->get('use_admin_theme')) {
     $paths = array(
       'node/*/edit' => TRUE,
       'node/*/delete' => TRUE,
@@ -395,13 +395,13 @@ function node_type_load($name) {
  */
 function node_add_body_field(NodeTypeInterface $type, $label = 'Body') {
    // Add or remove the body field, as needed.
-  $field = field_info_field('body');
+  $field = field_info_field('node', 'body');
   $instance = field_info_instance('node', 'body', $type->id());
   if (empty($field)) {
     $field = entity_create('field_entity', array(
-      'field_name' => 'body',
+      'name' => 'body',
+      'entity_type' => 'node',
       'type' => 'text_with_summary',
-      'entity_types' => array('node'),
     ));
     $field->save();
   }
@@ -417,20 +417,20 @@ function node_add_body_field(NodeTypeInterface $type, $label = 'Body') {
 
     // Assign widget settings for the 'default' form mode.
     entity_get_form_display('node', $type->type, 'default')
-      ->setComponent($field->id(), array(
+      ->setComponent('body', array(
         'type' => 'text_textarea_with_summary',
       ))
       ->save();
 
     // Assign display settings for the 'default' and 'teaser' view modes.
     entity_get_display('node', $type->type, 'default')
-      ->setComponent($field->id(), array(
+      ->setComponent('body', array(
         'label' => 'hidden',
         'type' => 'text_default',
       ))
       ->save();
     entity_get_display('node', $type->type, 'teaser')
-      ->setComponent($field->id(), array(
+      ->setComponent('body', array(
         'label' => 'hidden',
         'type' => 'text_summary_or_trimmed',
       ))
@@ -1900,10 +1900,10 @@ function node_form_system_site_information_settings_form_submit($form, &$form_st
  * @see node_form_system_themes_admin_form_submit()
  */
 function node_form_system_themes_admin_form_alter(&$form, &$form_state, $form_id) {
-  $form['admin_theme']['node_admin_theme'] = array(
+  $form['admin_theme']['use_admin_theme'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use the administration theme when editing or creating content'),
-    '#default_value' => variable_get('node_admin_theme', '0'),
+    '#default_value' => Drupal::config('node.settings')->get('use_admin_theme'),
   );
   $form['#submit'][] = 'node_form_system_themes_admin_form_submit';
 }
@@ -1914,7 +1914,9 @@ function node_form_system_themes_admin_form_alter(&$form, &$form_state, $form_id
  * @see node_form_system_themes_admin_form_alter()
  */
 function node_form_system_themes_admin_form_submit($form, &$form_state) {
-  variable_set('node_admin_theme', $form_state['values']['node_admin_theme']);
+  Drupal::config('node.settings')
+    ->set('use_admin_theme', $form_state['values']['use_admin_theme'])
+    ->save();
 }
 
 /**
@@ -2004,19 +2006,7 @@ function node_access($op, $node, $account = NULL, $langcode = NULL) {
 
   // If no language code was provided, default to the node's langcode.
   if (empty($langcode)) {
-    $langcode = $node->language()->id;
-    // If the Language module is enabled, try to use the language from content
-    // negotiation.
-    if (module_exists('language')) {
-      // Load languages the node exists in.
-      $node_translations = $node->getTranslationLanguages();
-      // Load the language from content negotiation.
-      $content_negotiation_langcode = language(Language::TYPE_CONTENT)->id;
-      // If there is a translation available, use it.
-      if (isset($node_translations[$content_negotiation_langcode])) {
-        $langcode = $content_negotiation_langcode;
-      }
-    }
+    $langcode = $node->prepareLangcode();
   }
   return $access_controller->access($node, $op, $langcode, $account);
 }
