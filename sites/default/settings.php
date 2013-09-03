@@ -231,7 +231,7 @@ $databases = array();
  *   $drupal_hash_salt = file_get_contents('/home/example/salt.txt');
  *
  */
-$drupal_hash_salt = 'asviUPnmvSyW5nFYtv-Lo2tyLaslu6ssUm9rjS8fLaU';
+$drupal_hash_salt = 'pG4qE2pxjOlH0vPMsqpDpBt60_nOHxKiDqi4QRpHP5E';
 
 /**
  * Location of the site configuration files.
@@ -411,14 +411,15 @@ $settings['update_free_access'] = FALSE;
 /**
  * Class Loader.
  *
- * By default, Drupal uses the Symfony UniversalClassLoader which is best for
- * development, as it does not break when code is moved on the file system.
- * The APC classloader provides better performance and is recommended for
- * production sites.
+ * By default, Drupal uses Composer's ClassLoader, which is best for
+ * development, as it does not break when code is moved on the file
+ * system. It is possible, however, to wrap the class loader with a
+ * cached class loader solution for better performance, which is
+ * recommended for production sites.
  *
  * Examples:
- *  $class_loader = 'apc'
- *  $class_loader = 'default'
+ *   $settings['class_loader'] = 'apc';
+ *   $settings['class_loader'] = 'default';
  */
 # $settings['class_loader'] = 'apc';
 
@@ -655,14 +656,10 @@ $databases['default']['default'] = array (
   'username' => 'podcaster',
   'password' => 'b094ce4',
   'host' => 'localhost',
-  'port' => '3306',
+  'port' => '',
   'namespace' => 'Drupal\\Core\\Database\\Driver\\mysql',
   'driver' => 'mysql',
   'prefix' => '',
 );
-$config_directories['active']['path'] = 'config_lxXBTdPyUY_D8yjK9lUp5ybO_5-DiopTMME-3w-xHeA/active';
-$config_directories['staging']['path'] = 'config_lxXBTdPyUY_D8yjK9lUp5ybO_5-DiopTMME-3w-xHeA/staging';
-
-error_reporting(E_ALL);
-ini_set('display_errors', TRUE);
-ini_set('display_startup_errors', TRUE);
+$config_directories['active']['path'] = 'config_0eKUAPTK0eIEPKM2puLxETHUMPk17fFfYmJV5aL51ZA/active';
+$config_directories['staging']['path'] = 'config_0eKUAPTK0eIEPKM2puLxETHUMPk17fFfYmJV5aL51ZA/staging';
