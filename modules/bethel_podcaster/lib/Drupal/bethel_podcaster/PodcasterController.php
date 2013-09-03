@@ -8,7 +8,8 @@
 namespace Drupal\bethel_podcaster;
 
 use Symfony\Component\HttpFoundation\Response;
-use Drupal\Core\Controller\ControllerInterface;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -17,7 +18,7 @@ use Drupal\Component\Utility\Json;
 use Drupal\Component\Utility\Settings;
 use Drupal\Core\Config\Config;
 
-class PodcasterController implements ControllerInterface {
+class PodcasterController implements ContainerInjectionInterface {
 
   /**
    * The system.theme config object.
