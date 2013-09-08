@@ -55,12 +55,7 @@ class PodcasterController implements ContainerInjectionInterface {
    * @return \Symfony\Component\HttpFoundation\JsonResponse
    *   The share counts as json.
    */
-  public function podcast_feed($id) {
-    $headers = array(
-      'Content-Length' => strlen($xml),
-      'Content-Type' => 'text/xml'
-    );
-    
+  public function podcast_feed($id) {    
     // Validate the widget is valid, and the node ID is an actual node.
     if (!is_numeric($id) || !$node = node_load($id)) {
       throw new NotFoundHttpException();
@@ -122,6 +117,11 @@ class PodcasterController implements ContainerInjectionInterface {
 
     // Build the XML file from the template.
     $podcast_xml = twig_render_template(drupal_get_path('module', 'bethel_podcaster') . '/templates/video-podcast.html.twig', $podcast);
+    
+    $headers = array(
+      'Content-Length' => strlen($podcast_xml),
+      'Content-Type' => 'text/xml'
+    );
 
     // Return a JSON formatted array.
     return new Response($podcast_xml, 200, $headers);
