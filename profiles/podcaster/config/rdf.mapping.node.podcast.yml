@@ -1,0 +1,32 @@
+id: node.article
+uuid: 5e1bfb0e-f6b4-4e06-a521-33e959bdb6a9
+targetEntityType: node
+bundle: article
+types:
+  - 'schema:Article'
+fieldMappings:
+  title:
+    properties:
+      - 'schema:name'
+  created:
+    properties:
+      - 'schema:dateCreated'
+    datatype_callback:
+      callable: 'date_iso8601'
+  changed:
+    properties:
+      - 'schema:dateModified'
+    datatype_callback:
+      callable: 'date_iso8601'
+  body:
+    properties:
+      - 'schema:text'
+  uid:
+    properties:
+      - 'schema:author'
+  field_image:
+    properties:
+      - 'schema:image'
+  field_tags:
+    properties:
+      - 'schema:about'

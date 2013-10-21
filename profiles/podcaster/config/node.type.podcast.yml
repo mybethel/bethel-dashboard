@@ -1,0 +1,18 @@
+type: podcast
+uuid: 38fcdfbf-92a0-43d3-af30-8395cba668d4
+name: Podcast
+description: 'Content type for Podcaster structure.'
+help: ''
+has_title: '1'
+title_label: Title
+settings:
+  node:
+    preview: '1'
+    options:
+      status: status
+      promote: promote
+      sticky: '0'
+      revision: '0'
+    submitted: '1'
+status: '1'
+langcode: en

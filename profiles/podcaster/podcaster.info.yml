@@ -1,0 +1,37 @@
+name: Podcaster
+type: profile
+description: 'Installation profile for Bethel Podcaster.'
+version: Beta
+core: 8.x
+dependencies:
+  - libraries
+  - podcaster
+  - node
+  - history
+  - block
+  - breakpoint
+  - ckeditor
+  - color
+  - config
+  - contextual
+  - contact
+  - datetime
+  - custom_block
+  - edit
+  - editor
+  - entity_reference
+  - help
+  - image
+  - menu
+  - number
+  - options
+  - path
+  - taxonomy
+  - shortcut
+  - toolbar
+  - overlay
+  - field_ui
+  - file
+  - rdf
+  - views
+  - views_ui
