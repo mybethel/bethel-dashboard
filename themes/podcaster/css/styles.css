@@ -86,6 +86,7 @@
   .node-type-podcast .field-name-field-image img {
     margin-top: 20px;
     max-width: 100%;
+    height: auto;
   }
   .node-type-podcast .content > .btn {
     width: 100%;
@@ -95,10 +96,6 @@
 .not-logged-in.node-type-podcast #main-menu,
 .not-logged-in.node-type-podcast .tabs {
   display: none;
-}
-
-.node-type-podcast .content {
-  text-align: justify;
 }
 
 .node-type-podcast .content > .btn {
