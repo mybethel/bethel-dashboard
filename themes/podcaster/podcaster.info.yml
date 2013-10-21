@@ -27,4 +27,4 @@ regions:
   footer: Footer
 # @todo D8: Remove once themes have to be installed.
 settings:
-  shortcut_module_link: '0'
+  shortcut_module_link: '1'

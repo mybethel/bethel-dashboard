@@ -159,8 +159,8 @@ function bethel_podcaster_video_form_submit($form, &$form_state) {
   drupal_set_message(t('Saved video file location for #' . $form_state['values']['video_id'] . '.  This video will now be visible in iTunes'), 'status');
 }
 
-function bethel_podcaster_user_format_name_alter(&$name, $account) {
+/*function bethel_podcaster_user_format_name_alter(&$name, $account) {
   if (isset($account->values['field_name']['und'])) {
     $name = $account->values['field_name']['und'][0]['value'];
   }
-}
+}*/
