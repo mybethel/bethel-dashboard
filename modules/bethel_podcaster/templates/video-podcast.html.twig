@@ -17,7 +17,7 @@
   <itunes:author>{{ author }}</itunes:author>
   <itunes:explicit>no</itunes:explicit>
   <itunes:image href="{{ image }}" />
-  <itunes:keywords>{{ keywords }}</itunes:keywords>
+  <itunes:keywords>{% for keyword in keywords %}{{ keyword }},{% endfor %}</itunes:keywords>
   <itunes:category text="Religion &amp; Spirituality">
     <itunes:category text="Christianity" />
   </itunes:category>

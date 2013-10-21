@@ -67,26 +67,28 @@ class PodcasterController implements ContainerInjectionInterface {
     // Build the Podcast information from the Node.
     $podcast = array();
     
-    $podcast['title'] = $node->getValue()['title'];
-    $podcast['description'] = $node->getValue()['body'][0]['value'];
-    $podcast['short_description'] = $node->getValue()['body'][0]['summary'];
+    $podcast['title'] = $node->title->value;
+    $podcast['description'] = $node->body->value;
+    $podcast['short_description'] = $node->body->summary;
     $podcast['website'] = $base_url . '/' . node_uri($node)['path'];
-    $podcast['author'] = $author->getValue()['field_name'][0]['value'];
-    $podcast['author_email'] = $author->getValue()['mail'][0]['value'];
+    $podcast['author'] = $author->user_name->value;
+    $podcast['author_email'] = $author->mail->value;
     $podcast['feed'] = $base_url . '/' . node_uri($node)['path'] . '/podcast.xml';
-    $podcast['image'] = file_create_url($image->getValue()['uri'][0]['value']);
-    $podcast['copyright'] = $node->getValue()['field_copyright'][0]['value'];
+    $podcast['image'] = file_create_url($image->uri->value);
+    $podcast['copyright'] = $node->field_copyright->value;
     
-    $vimeo_username = $node->getValue()['field_vimeo'][0]['value'];
+    $vimeo_username = $node->field_vimeo->value;
     
     // Get all the tags that we associate with this podcast.
-    $tag_field = $node->getValue()['field_tags'];
+    $tag_field = $node->field_tags->getValue();
     $matching_tags = array();
     
     foreach ($tag_field as $tag) {
       $tag_entity = entity_load('taxonomy_term', $tag['target_id']);
-      $matching_tags[] = $tag_entity->values['name']['und'];
+      $matching_tags[] = $tag_entity->name->value;
     }
+    
+    $podcast['keywords'] = $matching_tags;
     
     $rawdata = file_get_contents('http://vimeo.com/api/v2/' . $vimeo_username . '/videos.json');
     
