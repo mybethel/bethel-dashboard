@@ -1,0 +1,17 @@
+id: user.user.default
+uuid: f2d1d6d0-e255-4d3e-aa07-7b82c975f7c3
+targetEntityType: user
+bundle: user
+mode: default
+content:
+  user_picture:
+    type: image
+    weight: '0'
+    settings:
+      image_style: 'hero'
+      image_link: ''
+    label: hidden
+  member_for:
+    weight: '1'
+    visible: true
+status: true

@@ -1,0 +1,13 @@
+name: hero
+label: hero
+uuid: baa365a2-cd62-4349-8f00-d08466b11cf5
+status: '1'
+langcode: en
+effects:
+  c4a1b2a8-3e55-403b-ae00-e69f29d9a550:
+    uuid: c4a1b2a8-3e55-403b-ae00-e69f29d9a550
+    id: image_scale_and_crop
+    weight: '2'
+    data:
+      width: '700'
+      height: '250'

@@ -1,0 +1,15 @@
+id: node.podcast.field_copyright
+uuid: 5a7eff8d-0ddf-4f51-8700-e22c087209e1
+status: '1'
+langcode: en
+field_uuid: be5c490e-155a-4a54-9100-bc0f1e70a9aa
+entity_type: node
+bundle: podcast
+label: Copyright
+description: ''
+required: '0'
+default_value: {  }
+default_value_function: ''
+settings:
+  text_processing: '0'
+field_type: text

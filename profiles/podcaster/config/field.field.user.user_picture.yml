@@ -1,0 +1,31 @@
+id: user.user_picture
+uuid: 05bdc132-374b-4b15-9e2a-42cdf97ae24a
+status: '1'
+langcode: en
+name: user_picture
+entity_type: user
+type: image
+settings:
+  uri_scheme: public
+  default_image: '0'
+  column_groups:
+    file:
+      label: File
+      columns:
+        - target_id
+        - width
+        - height
+    alt:
+      label: Alt
+      translatable: '1'
+    title:
+      label: Title
+      translatable: '1'
+module: image
+active: '1'
+locked: '0'
+cardinality: '1'
+translatable: '0'
+indexes:
+  target_id:
+    - target_id

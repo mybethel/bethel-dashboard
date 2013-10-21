@@ -5,18 +5,16 @@ version: Beta
 core: 8.x
 dependencies:
   - libraries
-  - podcaster
+  - bethel_podcaster
   - node
   - history
   - block
   - breakpoint
   - ckeditor
-  - color
   - config
   - contextual
   - contact
   - datetime
-  - custom_block
   - edit
   - editor
   - entity_reference
@@ -27,7 +25,6 @@ dependencies:
   - options
   - path
   - taxonomy
-  - shortcut
   - toolbar
   - overlay
   - field_ui

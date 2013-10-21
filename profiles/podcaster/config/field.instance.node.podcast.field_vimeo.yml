@@ -1,0 +1,15 @@
+id: node.podcast.field_vimeo
+uuid: b74b5f60-f02c-44e4-b462-98a7fbd00331
+status: '1'
+langcode: en
+field_uuid: 104a62c9-ac61-49f6-bb21-33e489f0a55b
+entity_type: node
+bundle: podcast
+label: Vimeo
+description: ''
+required: '0'
+default_value: {  }
+default_value_function: ''
+settings:
+  text_processing: '0'
+field_type: text
