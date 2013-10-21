@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\bethel_podcaster/SharrreController
+ * Contains \Drupal\bethel_podcaster/PodcasterController
  */
 
 namespace Drupal\bethel_podcaster;
@@ -11,7 +11,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Component\Utility\Json;
@@ -62,25 +61,26 @@ class PodcasterController implements ContainerInjectionInterface {
     }
     
     global $base_url;
-    $author = user_load($node->values['uid']['und']);
-    $image = entity_load('file', $node->values['field_image']['und'][0]['target_id']);
+    $author = user_load($node->getValue()['uid'][0]['target_id']);
+    $image = entity_load('file', $node->getValue()['field_image'][0]['target_id']);
     
     // Build the Podcast information from the Node.
     $podcast = array();
     
-    $podcast['title'] = $node->values['title']['und'];
-    $podcast['description'] = $node->values['body']['und'][0]['value'];
-    $podcast['short_description'] = $node->values['body']['und'][0]['summary'];
+    $podcast['title'] = $node->getValue()['title'];
+    $podcast['description'] = $node->getValue()['body'][0]['value'];
+    $podcast['short_description'] = $node->getValue()['body'][0]['summary'];
     $podcast['website'] = $base_url . '/' . node_uri($node)['path'];
-    $podcast['author'] = $author->values['field_name']['und'][0]['value'];
-    $podcast['author_email'] = $author->values['mail']['und'];
+    $podcast['author'] = $author->getValue()['field_name'][0]['value'];
+    $podcast['author_email'] = $author->getValue()['mail'][0]['value'];
     $podcast['feed'] = $base_url . '/' . node_uri($node)['path'] . '/podcast.xml';
-    $podcast['image'] = file_create_url($image->values['uri']['und']);
+    $podcast['image'] = file_create_url($image->getValue()['uri'][0]['value']);
+    $podcast['copyright'] = $node->getValue()['field_copyright'][0]['value'];
     
-    $vimeo_username = $node->values['field_vimeo']['und'][0]['value'];
+    $vimeo_username = $node->getValue()['field_vimeo'][0]['value'];
     
     // Get all the tags that we associate with this podcast.
-    $tag_field = $node->values['field_tags']['und'];
+    $tag_field = $node->getValue()['field_tags'];
     $matching_tags = array();
     
     foreach ($tag_field as $tag) {

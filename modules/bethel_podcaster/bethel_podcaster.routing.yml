@@ -1,5 +1,5 @@
 bethel_podcaster.podcast_feed:
-  pattern: 'node/{id}/podcast.xml'
+  path: 'node/{id}/podcast.xml'
   defaults:
     _controller: '\Drupal\bethel_podcaster\PodcasterController::podcast_feed'
   requirements:
