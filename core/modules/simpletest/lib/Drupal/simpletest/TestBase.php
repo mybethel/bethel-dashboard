@@ -18,8 +18,6 @@ use Drupal\Core\Config\StorageInterface;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Language\Language;
 use Drupal\Core\StreamWrapper\PublicStream;
-use ReflectionMethod;
-use ReflectionObject;
 
 /**
  * Base class for Drupal tests.
@@ -179,6 +177,13 @@ abstract class TestBase {
    * @var \Drupal\Core\Config\ConfigImporter
    */
   protected $configImporter;
+
+  /**
+   * The random generator.
+   *
+   * @var \Drupal\Component\Utility\Random
+   */
+  protected $randomGenerator;
 
   /**
    * Constructor for Test.
@@ -734,7 +739,7 @@ abstract class TestBase {
     }
     $missing_requirements = $this->checkRequirements();
     if (!empty($missing_requirements)) {
-      $missing_requirements_object = new ReflectionObject($this);
+      $missing_requirements_object = new \ReflectionObject($this);
       $caller = array(
         'file' => $missing_requirements_object->getFileName(),
       );
@@ -743,12 +748,15 @@ abstract class TestBase {
       }
     }
     else {
+      if (defined("$class::SORT_METHODS")) {
+        sort($class_methods);
+      }
       foreach ($class_methods as $method) {
         // If the current method starts with "test", run it - it's a test.
         if (strtolower(substr($method, 0, 4)) == 'test') {
           // Insert a fail record. This will be deleted on completion to ensure
           // that testing completed.
-          $method_info = new ReflectionMethod($class, $method);
+          $method_info = new \ReflectionMethod($class, $method);
           $caller = array(
             'file' => $method_info->getFileName(),
             'line' => $method_info->getStartLine(),
@@ -984,7 +992,7 @@ abstract class TestBase {
   }
 
   /**
-   * Rebuild Drupal::getContainer().
+   * Rebuild \Drupal::getContainer().
    *
    * Use this to build a new kernel and service container. For example, when the
    * list of enabled modules is changed via the internal browser, in which case
@@ -995,14 +1003,14 @@ abstract class TestBase {
    * @see TestBase::tearDown()
    *
    * @todo Fix http://drupal.org/node/1708692 so that module enable/disable
-   *   changes are immediately reflected in Drupal::getContainer(). Until then,
+   *   changes are immediately reflected in \Drupal::getContainer(). Until then,
    *   tests can invoke this workaround when requiring services from newly
    *   enabled modules to be immediately available in the same request.
    */
   protected function rebuildContainer() {
     $this->kernel = new DrupalKernel('testing', drupal_classloader(), FALSE);
     $this->kernel->boot();
-    // DrupalKernel replaces the container in Drupal::getContainer() with a
+    // DrupalKernel replaces the container in \Drupal::getContainer() with a
     // different object, so we need to replace the instance on this test class.
     $this->container = \Drupal::getContainer();
     // The global $user is set in TestBase::prepareEnvironment().
@@ -1194,7 +1202,38 @@ abstract class TestBase {
    * @see \Drupal\Component\Utility\Random::string()
    */
   public function randomString($length = 8) {
-    return Random::string($length, TRUE);
+    return $this->getRandomGenerator()->string($length, TRUE, array($this, 'randomStringValidate'));
+  }
+
+  /**
+   * Callback for random string validation.
+   *
+   * @see \Drupal\Component\Utility\Random::string()
+   *
+   * @param string $string
+   *   The random string to validate.
+   *
+   * @return bool
+   *   TRUE if the random string is valid, FALSE if not.
+   */
+  public function randomStringValidate($string) {
+    // Consecutive spaces causes issues for
+    // Drupal\simpletest\WebTestBase::assertLink().
+    if (preg_match('/\s{2,}/', $string)) {
+      return FALSE;
+    }
+
+    // Starting with a space means that length might not be what is expected.
+    if (preg_match('/^\s/', $string)) {
+      return FALSE;
+    }
+
+    // Ending with a space means that length might not be what is expected.
+    if (preg_match('/\s$/', $string)) {
+      return FALSE;
+    }
+
+    return TRUE;
   }
 
   /**
@@ -1212,7 +1251,7 @@ abstract class TestBase {
    * @see \Drupal\Component\Utility\Random::name()
    */
   public function randomName($length = 8) {
-    return Random::name($length, TRUE);
+    return $this->getRandomGenerator()->name($length, TRUE);
   }
 
   /**
@@ -1228,7 +1267,20 @@ abstract class TestBase {
    * @see \Drupal\Component\Utility\Random::object()
    */
   public function randomObject($size = 4) {
-    return Random::object($size);
+    return $this->getRandomGenerator()->object($size);
+  }
+
+  /**
+   * Gets the random generator for the utility methods.
+   *
+   * @return \Drupal\Component\Utility\Random
+   *   The random generator
+   */
+  protected function getRandomGenerator() {
+    if (!is_object($this->randomGenerator)) {
+      $this->randomGenerator = new Random();
+    }
+    return $this->randomGenerator;
   }
 
   /**
@@ -1308,7 +1360,8 @@ abstract class TestBase {
         $this->container->get('event_dispatcher'),
         $this->container->get('config.factory'),
         $this->container->get('entity.manager'),
-        $this->container->get('lock')
+        $this->container->get('lock'),
+        $this->container->get('uuid')
       );
     }
     // Always recalculate the changelist when called.

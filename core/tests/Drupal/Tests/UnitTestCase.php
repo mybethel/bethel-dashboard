@@ -15,6 +15,13 @@ use Drupal\Component\Utility\Random;
 abstract class UnitTestCase extends \PHPUnit_Framework_TestCase {
 
   /**
+   * The random generator.
+   *
+   * @var \Drupal\Component\Utility\Random
+   */
+  protected $randomGenerator;
+
+  /**
    * This method exists to support the simpletest UI runner.
    *
    * It should eventually be replaced with something native to phpunit.
@@ -43,11 +50,25 @@ abstract class UnitTestCase extends \PHPUnit_Framework_TestCase {
    * @return string
    *   Randomly generated unique string.
    *
-   * @see \Drupal\Component\Utility::string()
+   * @see \Drupal\Component\Utility\Random::name()
    */
   public function randomName($length = 8) {
-    return Random::name($length, TRUE);
+    return $this->getRandomGenerator()->name($length, TRUE);
   }
+
+  /**
+   * Gets the random generator for the utility methods.
+   *
+   * @return \Drupal\Component\Utility\Random
+   *   The random generator
+   */
+  protected function getRandomGenerator() {
+    if (!is_object($this->randomGenerator)) {
+      $this->randomGenerator = new Random();
+    }
+    return $this->randomGenerator;
+  }
+
 
   /**
    * Returns a stub config factory that behaves according to the passed in array.
@@ -58,12 +79,12 @@ abstract class UnitTestCase extends \PHPUnit_Framework_TestCase {
    * @param array $configs
    *   An associative array of configuration settings whose keys are configuration
    *   object names and whose values are key => value arrays for the configuration
-   *   object in question.
+   *   object in question. Defaults to an empty array.
    *
    * @return \PHPUnit_Framework_MockObject_MockBuilder
    *   A MockBuilder object for the ConfigFactory with the desired return values.
    */
-  public function getConfigFactoryStub($configs) {
+  public function getConfigFactoryStub(array $configs = array()) {
     $config_map = array();
     // Construct the desired configuration object stubs, each with its own
     // desired return map.
