@@ -89,16 +89,15 @@ function podcaster_preprocess_page(&$variables) {
     // Make sure the shortcut link is the first item in title_suffix.
     $variables['title_suffix']['add_or_remove_shortcut']['#weight'] = -100;
   }
-  
-  if (isset($variables['page']['content']['podcaster_content']['content'][0]['user_picture']['#items'])) {
+  if (isset($variables['page']['content']['system_main']['user_picture']['#items'])) {
     $image = array(
       'style_name' => 'hero',
-      'uri' => $variables['page']['content']['podcaster_content']['content'][0]['user_picture']['#items'][0]['entity']->get('uri')->value,
+      'uri' => $variables['page']['content']['system_main']['user_picture']['#items'][0]['entity']->get('uri')->value,
       'width' => '',
       'height' => '',
     );
     
-    unset($variables['page']['content']['podcaster_content']['content'][0]['user_picture']);
+    unset($variables['page']['content']['system_main']['user_picture']);
     
     $variables['hero'] = theme_image_style($image);
   }
