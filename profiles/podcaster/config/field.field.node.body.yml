@@ -1,0 +1,14 @@
+id: node.body
+uuid: e05b4836-c03d-43be-a500-0f40a3afa78a
+status: true
+langcode: en
+name: body
+entity_type: node
+type: text_with_summary
+settings: {  }
+module: text
+active: true
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }

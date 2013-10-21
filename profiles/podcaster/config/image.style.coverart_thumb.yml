@@ -1,0 +1,13 @@
+name: coverart_thumb
+label: 'Cover Art (Thumbnail)'
+uuid: 55dd0bda-623c-453f-b600-cedfcbaa0a97
+status: true
+langcode: en
+effects:
+  805f97bb-2bf1-46f3-9d06-6c9f4eef4cd4:
+    uuid: 805f97bb-2bf1-46f3-9d06-6c9f4eef4cd4
+    id: image_scale_and_crop
+    weight: 2
+    data:
+      width: '400'
+      height: '400'

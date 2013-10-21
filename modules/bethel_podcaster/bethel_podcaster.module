@@ -23,8 +23,8 @@ function bethel_podcaster_theme() {
   );
 }
 
-function bethel_podcaster_node_view($node, $display, $view_mode) {
-  if ($node->values['type']['und'] == "podcast_feed" && $view_mode == 'full') {
+function bethel_podcaster_node_view($node, $display, $view_mode, $langcode) {
+  if ($node->getType() == "podcast" && $view_mode == 'full') {
     global $base_url;
     $subscribe_link = $base_url . '/' . node_uri($node)['path'] . '/podcast.xml';
     $node->content['podcast_subscript'] = array(
@@ -34,7 +34,7 @@ function bethel_podcaster_node_view($node, $display, $view_mode) {
     $node->content['podcast_contents'] = array(
       '#theme' => 'video_wrapper',
       '#node' => $node,
-      '#filtered' => $node->values['field_tags']['und'],
+      '#filtered' => $node->getValue()['field_tags'],
       '#videofeed' => 'hbcoakville',
       '#weight' => '100',
     );
@@ -71,7 +71,7 @@ function template_preprocess_video_wrapper(&$variables) {
   
   foreach ($variables['content']['#filtered'] as $tag) {
     $tag_entity = entity_load('taxonomy_term', $tag['target_id']);
-    $matching_tags[] = $tag_entity->values['name']['und'];
+    $matching_tags[] = $tag_entity->getValue()['name'][0]['value'];
   }
   
   $variables['edit_access'] = node_access('update', $variables['content']['#node']);

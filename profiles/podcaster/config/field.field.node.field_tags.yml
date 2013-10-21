@@ -1,20 +1,21 @@
 id: node.field_tags
 uuid: 60db47f4-54fb-4c86-a439-5769fbda4bd1
+status: 1
+langcode: und
 name: field_tags
 entity_type: node
 type: taxonomy_term_reference
-module: taxonomy
-active: '1'
 settings:
   allowed_values:
     -
-      vocabulary: tags
+      vocabulary: keywords
       parent: 0
+  options_list_callback: null
+module: taxonomy
+active: true
 locked: '0'
 cardinality: '-1'
 translatable: '0'
 indexes:
   target_id:
     - target_id
-status: 1
-langcode: und

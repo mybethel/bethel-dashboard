@@ -1,0 +1,16 @@
+id: node.podcast.body
+uuid: 16ba525c-f508-4a1a-a300-a0a345a4daec
+status: true
+langcode: en
+field_uuid: e05b4836-c03d-43be-a500-0f40a3afa78a
+entity_type: node
+bundle: podcast
+label: Description
+description: ''
+required: 0
+default_value: {  }
+default_value_function: ''
+settings:
+  text_processing: '0'
+  display_summary: 1
+field_type: text_with_summary

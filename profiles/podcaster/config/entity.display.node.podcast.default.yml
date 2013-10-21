@@ -1,0 +1,26 @@
+id: node.podcast.default
+uuid: 57faf9ac-ebd8-455e-8a00-a01fbd2bc5e0
+targetEntityType: node
+bundle: podcast
+mode: default
+content:
+  body:
+    type: text_default
+    weight: '1'
+    settings: {  }
+    label: hidden
+  field_image:
+    type: image
+    weight: '0'
+    settings:
+      image_style: coverart_thumb
+      image_link: ''
+    label: hidden
+  field_copyright:
+    type: text_default
+    weight: '2'
+    settings: {  }
+    label: hidden
+  language:
+    visible: false
+status: true

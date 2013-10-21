@@ -1,24 +1,24 @@
-id: node.podcaster.field_image
-uuid: 9601b8f1-65a9-46a6-a500-d072d1232449
-field_name: field_image
+id: node.podcast.field_image
+uuid: bd2bdaaf-c559-48e6-9e02-2fcc1c0b0651
+status: true
+langcode: en
 field_uuid: 748beaea-5074-4ff2-b51c-28a643d37c3a
 entity_type: node
-bundle: podcaster
-label: Image
-description: ''
-required: false
+bundle: podcast
+label: 'Cover Art'
+description: 'Square cover image for iTunes.  Any image uploaded will be automatically resized to 1400x1400 pixels.'
+required: 1
 default_value: {  }
 default_value_function: ''
 settings:
-  file_directory: field/image
+  file_directory: podcast
   file_extensions: 'png gif jpg jpeg'
   max_filesize: ''
   max_resolution: ''
   min_resolution: ''
-  alt_field: true
-  title_field: ''
+  alt_field: 0
   alt_field_required: 0
+  title_field: 0
   title_field_required: 0
   default_image: 0
-status: 1
-langcode: und
+field_type: image

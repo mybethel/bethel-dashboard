@@ -1,0 +1,13 @@
+name: coverart
+label: 'Cover Art'
+uuid: 584c69b3-817f-4d18-b800-d02b505c7772
+status: true
+langcode: en
+effects:
+  75b39315-cf26-4ca9-a707-7e2035463295:
+    uuid: 75b39315-cf26-4ca9-a707-7e2035463295
+    id: image_scale_and_crop
+    weight: '2'
+    data:
+      width: '1400'
+      height: '1400'
