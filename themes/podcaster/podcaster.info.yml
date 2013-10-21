@@ -4,6 +4,8 @@ description: 'Initial Beta theme based on Bootstrap.'
 package: Core
 version: Beta
 core: 8.x
+dependencies:
+  - libraries
 stylesheets:
   all:
     - css/styles.css

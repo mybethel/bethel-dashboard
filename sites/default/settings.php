@@ -231,7 +231,7 @@ $databases = array();
  *   $drupal_hash_salt = file_get_contents('/home/example/salt.txt');
  *
  */
-$drupal_hash_salt = '0IjF5qf8ywgQ0tLTWnf--gRJc5TXWJRHM393GA7Uofo';
+$drupal_hash_salt = 'APm9RjFiLtW2YlwNdf8fc0tNN1EB8SZ_pgGnnzoUEZU';
 
 /**
  * Location of the site configuration files.
@@ -666,6 +666,6 @@ $databases['default']['default'] = array (
   'driver' => 'mysql',
   'prefix' => '',
 );
-$settings['install_profile'] = 'standard';
-$config_directories['active']['path'] = 'config_VjxOowVhlu2g7xJefrEy57Eya0MP8m21bWKDOK2z_Tk/active';
-$config_directories['staging']['path'] = 'config_VjxOowVhlu2g7xJefrEy57Eya0MP8m21bWKDOK2z_Tk/staging';
+$settings['install_profile'] = 'podcaster';
+$config_directories['active']['path'] = 'config_EBbFxRhgrNYhaWYWRHChmhgtoXw8b1-8R-nW8BdV7QA/active';
+$config_directories['staging']['path'] = 'config_EBbFxRhgrNYhaWYWRHChmhgtoXw8b1-8R-nW8BdV7QA/staging';
