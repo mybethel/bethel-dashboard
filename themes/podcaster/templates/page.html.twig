@@ -81,13 +81,7 @@
 #}
 <div id="page-wrapper" class="container"><div id="page">
 
-  <header id="header" class="{{ secondary_menu ? 'with-secondary-menu' : 'without-secondary-menu' }}" role="banner"><div class="section clearfix">
-   {% if secondary_menu %}
-      <nav id="secondary-menu" class="navigation" role="navigation">
-        {{ secondary_menu }}
-      </nav> <!-- /#secondary-menu -->
-    {% endif %}
-
+  <header id="header" role="banner"><div class="section clearfix">
     {% if logo %}
       <a href="{{ front_page }}" title="{{ 'Home'|t }}" rel="home" id="logo">
         <img src="{{ logo }}" alt="{{ 'Home'|t }}" />
