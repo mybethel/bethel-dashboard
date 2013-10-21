@@ -1,0 +1,34 @@
+id: user.user.default
+uuid: b77d9eb9-fb2e-4dc0-8207-7ad3eae54d98
+targetEntityType: user
+bundle: user
+mode: default
+content:
+  user_name:
+    type: text_textfield
+    weight: '2'
+    settings:
+      size: '60'
+      placeholder: ''
+  user_picture:
+    type: image_image
+    weight: '1'
+    settings:
+      progress_indicator: throbber
+      preview_image_style: thumbnail
+  contact:
+    weight: '5'
+    visible: true
+  overlay_control:
+    weight: '4'
+    visible: true
+  account:
+    weight: '0'
+    visible: true
+  language:
+    weight: '3'
+    visible: true
+  timezone:
+    weight: '6'
+    visible: true
+status: true

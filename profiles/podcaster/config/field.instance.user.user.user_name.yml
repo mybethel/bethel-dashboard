@@ -1,0 +1,15 @@
+id: user.user.user_name
+uuid: f7cec1a4-6a41-4bd6-9f26-38ecd162dfc9
+status: true
+langcode: en
+field_uuid: 7062cb4f-9962-4c4a-b900-d0d84c8ada28
+entity_type: user
+bundle: user
+label: Name
+description: ''
+required: 0
+default_value: {  }
+default_value_function: ''
+settings:
+  text_processing: '0'
+field_type: text

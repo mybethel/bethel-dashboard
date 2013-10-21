@@ -1,0 +1,15 @@
+id: user.user_name
+uuid: 7062cb4f-9962-4c4a-b900-d0d84c8ada28
+status: true
+langcode: en
+name: user_name
+entity_type: user
+type: text
+settings:
+  max_length: '255'
+module: text
+active: true
+locked: false
+cardinality: '1'
+translatable: false
+indexes: {  }
