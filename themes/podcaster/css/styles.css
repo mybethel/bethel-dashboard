@@ -167,7 +167,7 @@
   }
 }
 
-.view-frontpage img {
+#block-views-block-frontpage img {
   max-width: 100%;
   height: auto;
 }
