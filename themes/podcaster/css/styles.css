@@ -71,7 +71,7 @@
   margin-right: 5px;
 }
 
-.node-type-podcast-feed .field-name-field-image {
+.node-type-podcast .field-name-field-image {
   float: left;
   margin-right: 20px;
   margin-bottom: 20px;
@@ -79,33 +79,33 @@
 }
 
 @media all and (max-width: 560px) {
-  .node-type-podcast-feed .field-name-field-image {
+  .node-type-podcast .field-name-field-image {
     float: none;
     margin-right: 0;
   }
-  .node-type-podcast-feed .field-name-field-image img {
+  .node-type-podcast .field-name-field-image img {
     margin-top: 20px;
     max-width: 100%;
   }
-  .node-type-podcast-feed .content > .btn {
+  .node-type-podcast .content > .btn {
     width: 100%;
   }
 }
 
-.not-logged-in.node-type-podcast-feed #main-menu,
-.not-logged-in.node-type-podcast-feed .tabs {
+.not-logged-in.node-type-podcast #main-menu,
+.not-logged-in.node-type-podcast .tabs {
   display: none;
 }
 
-.node-type-podcast-feed .content {
+.node-type-podcast .content {
   text-align: justify;
 }
 
-.node-type-podcast-feed .content > .btn {
+.node-type-podcast .content > .btn {
   margin-left: 20px;
 }
 
-.node-type-podcast-feed .field-name-field-copyright {
+.node-type-podcast .field-name-field-copyright {
   margin-top: 20px;
   font-size: 12px;
 }
