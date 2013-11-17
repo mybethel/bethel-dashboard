@@ -1,0 +1,7 @@
+name: Location
+type: module
+description: 'Location data and geo-encoding.'
+package: Bethel
+core: 8.x
+dependencies:
+  - field
