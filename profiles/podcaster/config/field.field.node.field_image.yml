@@ -1,13 +1,18 @@
 id: node.field_image
-uuid: 748beaea-5074-4ff2-b51c-28a643d37c3a
+uuid: 100dbe77-602c-4995-8837-55d124781182
+status: true
+langcode: en
 name: field_image
 entity_type: node
 type: image
-module: image
-active: '1'
 settings:
   uri_scheme: public
-  default_image: false
+  default_image:
+    fid: null
+    alt: ''
+    title: ''
+    width: null
+    height: null
   column_groups:
     file:
       label: File
@@ -21,11 +26,9 @@ settings:
     title:
       label: Title
       translatable: true
-locked: '0'
+module: image
+active: true
+locked: false
 cardinality: '1'
-translatable: '0'
-indexes:
-  target_id:
-    - target_id
-status: 1
-langcode: und
+translatable: false
+indexes: {  }

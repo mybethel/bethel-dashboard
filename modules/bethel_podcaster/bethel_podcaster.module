@@ -8,7 +8,7 @@ function bethel_podcaster_menu() {
     'title' => 'Podcast Feed',
     'route_name' => 'bethel_podcaster.podcast_feed',
     'type' => MENU_LOCAL_TASK,
-    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'context' => MENU_CONTEXT_PAGE,
     'weight' => 100,
   );
   return $items;
