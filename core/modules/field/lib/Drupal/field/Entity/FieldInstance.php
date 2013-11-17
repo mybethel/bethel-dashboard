@@ -18,7 +18,6 @@ use Drupal\field\FieldInstanceInterface;
  * @EntityType(
  *   id = "field_instance",
  *   label = @Translation("Field instance"),
- *   module = "field",
  *   controllers = {
  *     "storage" = "Drupal\field\FieldInstanceStorageController"
  *   },
@@ -582,6 +581,13 @@ class FieldInstance extends ConfigEntityBase implements FieldInstanceInterface {
    */
   public function isFieldRequired() {
     return $this->required;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isFieldMultiple() {
+    return $this->field->isFieldMultiple();
   }
 
   /**

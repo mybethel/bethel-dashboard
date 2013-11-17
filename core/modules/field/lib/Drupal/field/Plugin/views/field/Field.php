@@ -7,10 +7,13 @@
 
 namespace Drupal\field\Plugin\views\field;
 
+use Drupal\Component\Utility\MapArray;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\EntityManager;
+use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\EntityStorageControllerInterface;
+use Drupal\field\Field as FieldHelper;
 use Drupal\Core\Entity\FieldableDatabaseStorageController;
+use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FormatterPluginManager;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Language\LanguageManager;
@@ -74,7 +77,7 @@ class Field extends FieldPluginBase {
   /**
    * The entity manager.
    *
-   * @var \Drupal\Core\Entity\EntityManager
+   * @var \Drupal\Core\Entity\EntityManagerInterface
    */
   protected $entityManager;
 
@@ -101,14 +104,14 @@ class Field extends FieldPluginBase {
    *   The plugin_id for the plugin instance.
    * @param array $plugin_definition
    *   The plugin implementation definition.
-   * @param \Drupal\Core\Entity\EntityManager $entity_manager
+   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The field formatter plugin manager.
    * @param \Drupal\Core\Field\FormatterPluginManager $formatter_plugin_manager
    *   The field formatter plugin manager.
    * @param \Drupal\Core\Language\LanguageManager $language_manager
    *   The language manager.
    */
-  public function __construct(array $configuration, $plugin_id, array $plugin_definition, EntityManager $entity_manager, FormatterPluginManager $formatter_plugin_manager, LanguageManager $language_manager) {
+  public function __construct(array $configuration, $plugin_id, array $plugin_definition, EntityManagerInterface $entity_manager, FormatterPluginManager $formatter_plugin_manager, LanguageManager $language_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
     $this->entityManager = $entity_manager;
@@ -136,12 +139,12 @@ class Field extends FieldPluginBase {
   public function init(ViewExecutable $view, DisplayPluginBase $display, array &$options = NULL) {
     parent::init($view, $display, $options);
 
-    $this->field_info = $field = field_info_field($this->definition['entity_type'], $this->definition['field_name']);
+    $this->field_info = FieldHelper::fieldInfo()->getField($this->definition['entity_type'], $this->definition['field_name']);
     $this->multiple = FALSE;
     $this->limit_values = FALSE;
 
-    $cardinality = $field->getFieldCardinality();
-    if ($cardinality > 1 || $cardinality == FIELD_CARDINALITY_UNLIMITED) {
+    $cardinality = $this->field_info->getFieldCardinality();
+    if ($this->field_info->isFieldMultiple()) {
       $this->multiple = TRUE;
 
       // If "Display all values in the same row" is FALSE, then we always limit
@@ -260,14 +263,7 @@ class Field extends FieldPluginBase {
           $this->view->display_handler->options['field_langcode']
         );
         $placeholder = $this->placeholder();
-        $langcode_fallback_candidates = array($langcode);
-        if (field_language_fallback_enabled()) {
-          require_once DRUPAL_ROOT . '/includes/language.inc';
-          $langcode_fallback_candidates = array_merge($langcode_fallback_candidates, language_fallback_get_candidates());
-        }
-        else {
-          $langcode_fallback_candidates[] = Language::LANGCODE_NOT_SPECIFIED;
-        }
+        $langcode_fallback_candidates = $this->languageManager->getFallbackCandidates($langcode, array('operation' => 'views_query', 'data' => $this));
         $this->query->addWhereExpression(0, "$column IN($placeholder) OR $column IS NULL", array($placeholder => $langcode_fallback_candidates));
       }
     }
@@ -500,7 +496,7 @@ class Field extends FieldPluginBase {
     // translating prefix and suffix separately.
     list($prefix, $suffix) = explode('@count', t('Display @count value(s)'));
 
-    if ($field->getFieldCardinality() == FIELD_CARDINALITY_UNLIMITED) {
+    if ($field->getFieldCardinality() == FieldDefinitionInterface::CARDINALITY_UNLIMITED) {
       $type = 'textfield';
       $options = NULL;
       $size = 5;
@@ -605,9 +601,10 @@ class Field extends FieldPluginBase {
     parent::buildGroupByForm($form, $form_state);
     // With "field API" fields, the column target of the grouping function
     // and any additional grouping columns must be specified.
+
     $group_columns = array(
       'entity_id' => t('Entity ID'),
-    ) + drupal_map_assoc(array_keys($this->field_info['columns']), 'ucfirst');
+    ) + MapArray::copyValuesToKeys(array_keys($this->field_info->getColumns()), 'ucfirst');
 
     $form['group_column'] = array(
       '#type' => 'select',
@@ -617,7 +614,7 @@ class Field extends FieldPluginBase {
       '#options' => $group_columns,
     );
 
-    $options = drupal_map_assoc(array('bundle', 'language', 'entity_type'), 'ucfirst');
+    $options = MapArray::copyValuesToKeys(array('bundle', 'language', 'entity_type'), 'ucfirst');
 
     // Add on defined fields, noting that they're prefixed with the field name.
     $form['group_columns'] = array(
@@ -866,11 +863,12 @@ class Field extends FieldPluginBase {
         $this->view->display_handler->options['field_language']
       );
 
-      // Give the Field Language API a chance to fallback to a different language
-      // (or Language::LANGCODE_NOT_SPECIFIED), in case the field has no data for the selected language.
-      // field_view_field() does this as well, but since the returned language code
-      // is used before calling it, the fallback needs to happen explicitly.
-      $langcode = field_language($entity, $this->field_info['field_name'], $langcode);
+      // Give the Entity Field API a chance to fallback to a different language
+      // (or Language::LANGCODE_NOT_SPECIFIED), in case the field has no data
+      // for the selected language. field_view_field() does this as well, but
+      // since the returned language code is used before calling it, the
+      // fallback needs to happen explicitly.
+      $langcode = $this->entityManager->getTranslationFromContext($entity, $langcode)->language()->id;
 
       return $langcode;
     }

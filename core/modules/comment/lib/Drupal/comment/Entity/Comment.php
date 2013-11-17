@@ -21,11 +21,10 @@ use Drupal\Core\Language\Language;
  *   id = "comment",
  *   label = @Translation("Comment"),
  *   bundle_label = @Translation("Content type"),
- *   module = "comment",
  *   controllers = {
  *     "storage" = "Drupal\comment\CommentStorageController",
  *     "access" = "Drupal\comment\CommentAccessController",
- *     "render" = "Drupal\comment\CommentRenderController",
+ *     "view_builder" = "Drupal\comment\CommentViewBuilder",
  *     "form" = {
  *       "default" = "Drupal\comment\CommentFormController",
  *       "delete" = "Drupal\comment\Form\DeleteForm"
@@ -48,8 +47,8 @@ use Drupal\Core\Language\Language;
  *     "bundle" = "field_id"
  *   },
  *   links = {
- *     "canonical" = "/comment/{comment}",
- *     "edit-form" = "/comment/{comment}/edit"
+ *     "canonical" = "comment.permalink",
+ *     "edit-form" = "comment.edit_page"
  *   }
  * )
  */

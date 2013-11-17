@@ -20,10 +20,9 @@ use Drupal\aggregator\FeedInterface;
  * @EntityType(
  *   id = "aggregator_feed",
  *   label = @Translation("Aggregator feed"),
- *   module = "aggregator",
  *   controllers = {
  *     "storage" = "Drupal\aggregator\FeedStorageController",
- *     "render" = "Drupal\aggregator\FeedRenderController",
+ *     "view_builder" = "Drupal\aggregator\FeedViewBuilder",
  *     "form" = {
  *       "default" = "Drupal\aggregator\FeedFormController",
  *       "delete" = "Drupal\aggregator\Form\FeedDeleteForm",

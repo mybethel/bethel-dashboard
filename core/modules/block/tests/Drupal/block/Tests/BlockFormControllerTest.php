@@ -10,11 +10,6 @@ namespace Drupal\Tests\block;
 use Drupal\block\BlockFormController;
 use Drupal\Tests\UnitTestCase;
 
-// @todo Remove once the constants are replaced with constants on classes.
-if (!defined('BLOCK_REGION_NONE')) {
-  define('BLOCK_REGION_NONE', -1);
-}
-
 /**
  * Tests the block form controller.
  *
@@ -65,9 +60,7 @@ class BlockFormControllerTest extends UnitTestCase {
       ->with('block', 'AND')
       ->will($this->returnValue($query));
 
-    $entity_manager = $this->getMockBuilder('Drupal\Core\Entity\EntityManager')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $entity_manager = $this->getMock('Drupal\Core\Entity\EntityManagerInterface');
 
     $entity_manager->expects($this->any())
       ->method('getStorageController')
