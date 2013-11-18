@@ -1,0 +1,14 @@
+id: user.field_locations
+uuid: 8a6930d8-c72d-42f6-a700-cbe5e00d630f
+status: true
+langcode: en
+name: field_locations
+entity_type: user
+type: bethel_location
+settings: {  }
+module: bethel_location
+active: true
+locked: false
+cardinality: '-1'
+translatable: false
+indexes: {  }

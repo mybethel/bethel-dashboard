@@ -1,0 +1,14 @@
+id: user.user.field_locations
+uuid: 3e3ac041-764e-42bd-a35a-906090e0fe8a
+status: true
+langcode: en
+field_uuid: 8a6930d8-c72d-42f6-a700-cbe5e00d630f
+entity_type: user
+bundle: user
+label: Locations
+description: ''
+required: 0
+default_value: {  }
+default_value_function: ''
+settings: {  }
+field_type: bethel_location
