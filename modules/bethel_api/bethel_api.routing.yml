@@ -1,0 +1,6 @@
+bethel_api.locations:
+  path: 'api/locations'
+  defaults:
+    _controller: '\Drupal\bethel_api\BethelAPIController::locations'
+  requirements:
+    _access: 'TRUE'

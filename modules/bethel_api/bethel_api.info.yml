@@ -1,0 +1,5 @@
+name: API
+type: module
+description: 'API endpoints for Bethel.'
+package: Bethel
+core: 8.x
