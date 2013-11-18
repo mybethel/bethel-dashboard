@@ -13,7 +13,7 @@ use Drupal\Component\Utility\Json;
 
 class BethelAPIController {
   public function locations() { 
-    $locations = db_query('SELECT field_locations_location,field_locations_locationLatitude,field_locations_locationLongitude FROM {user__field_locations}')->fetchAllAssoc('field_locations_location');
+    $locations = db_query("SELECT l.field_locations_location AS 'address', l.field_locations_locationLatitude AS 'lat', l.field_locations_locationLongitude AS 'long', u.uid FROM {user__field_locations} l LEFT JOIN {users} u ON l.entity_id = u.uid")->fetchAllAssoc('address');
     // Return a JSON formatted array.
     return new JsonResponse($locations);
   }

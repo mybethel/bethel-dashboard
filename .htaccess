@@ -59,6 +59,11 @@ DirectoryIndex index.php index.html index.htm
   RewriteCond %{HTTP_HOST} ^podcaster\.getbethel\.com$
   RewriteRule ^(.*)$ http://podcaster.bethel.io/$1 [R=301,L]
 
+  RewriteCond %{HTTP_HOST} ^api.bethel.io$
+  RewriteRule ^$ http://my.bethel.io/ [R=301,L]
+  RewriteCond %{HTTP_HOST} ^api.bethel.io$
+  RewriteRule ^(.*)$ http://my.bethel.io/api/$1 [P]
+
   # Set "protossl" to "s" if we were accessed via https://.  This is used later
   # if you enable "www." stripping or enforcement, in order to ensure that
   # you don't bounce between http and https.

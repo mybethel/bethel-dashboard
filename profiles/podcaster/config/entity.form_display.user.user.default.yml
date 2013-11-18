@@ -6,7 +6,7 @@ mode: default
 content:
   user_name:
     type: text_textfield
-    weight: '2'
+    weight: '5'
     settings:
       size: '60'
       placeholder: ''
@@ -17,18 +17,23 @@ content:
       progress_indicator: throbber
       preview_image_style: thumbnail
   contact:
-    weight: '5'
+    weight: '3'
     visible: true
   overlay_control:
-    weight: '4'
+    weight: '2'
     visible: true
   account:
     weight: '0'
     visible: true
   language:
-    weight: '3'
+    weight: '1'
     visible: true
   timezone:
-    weight: '6'
+    weight: '4'
     visible: true
+  field_locations:
+    type: bethel_location_default
+    weight: '6'
+    settings:
+      placeholder: ''
 status: true

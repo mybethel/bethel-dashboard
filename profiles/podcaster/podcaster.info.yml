@@ -5,9 +5,11 @@ version: Beta
 core: 8.x
 dependencies:
   - libraries
-  - bethel_podcaster
   - node
   - history
+  - bethel_api
+  - bethel_location
+  - bethel_podcaster
   - block
   - breakpoint
   - ckeditor
