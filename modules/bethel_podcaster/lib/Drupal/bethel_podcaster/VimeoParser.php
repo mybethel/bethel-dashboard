@@ -18,7 +18,11 @@ class VimeoParser {
   public function __construct($variables) {
     $this->variables = $variables;
     $this->username = $variables['content']['#videofeed'];
-    $this->tags = $variables['content']['#filtered'];
+    
+    foreach ($variables['content']['#filtered'] as $tag) {
+      $tag_entity = entity_load('taxonomy_term', $tag['target_id']);
+      $this->tags[] = $tag_entity->getValue()['name'][0]['value'];
+    }
     
     $page = 1;
     do {
@@ -29,13 +33,6 @@ class VimeoParser {
   
   private function processVimeoFeed($page) {
     $rawdata = file_get_contents('http://vimeo.com/api/v2/' . $this->username . '/videos.json?page=' . $page);
-    
-    $matching_tags = array();
-    
-    foreach ($this->tags as $tag) {
-      $tag_entity = entity_load('taxonomy_term', $tag['target_id']);
-      $matching_tags[] = $tag_entity->getValue()['name'][0]['value'];
-    }
   
     // Decode the JSON into an array for parsing.
     $videos = \Drupal\Component\Utility\Json::decode($rawdata);
@@ -47,7 +44,7 @@ class VimeoParser {
   
       foreach ($tags as $tag) {
         // Only include videos in the podcast that match tags the user has set.
-        if (in_array($tag, $matching_tags)) {
+        if (in_array($tag, $this->tags)) {
           $durationformat = $video['duration'] < 3600 ? 'i:s' : 'H:i:s';
           $this->variables['videos'][$video['id']]['title'] = $video['title'];
           $this->variables['videos'][$video['id']]['url'] = $video['url'];
