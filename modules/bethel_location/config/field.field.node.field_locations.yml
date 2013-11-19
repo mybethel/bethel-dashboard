@@ -1,9 +1,9 @@
-id: user.field_locations
-uuid: 8a6930d8-c72d-42f6-a700-cbe5e00d630f
+id: node.field_locations
+uuid: fd3e52dd-0976-44f4-ad00-cf98f9c20784
 status: true
 langcode: en
 name: field_locations
-entity_type: user
+entity_type: node
 type: bethel_location
 settings: {  }
 module: bethel_location

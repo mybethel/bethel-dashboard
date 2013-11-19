@@ -1,0 +1,18 @@
+type: locations
+uuid: 749ee6fe-b677-43a1-8c4d-77659d8ac95f
+name: Locations
+description: 'Campus locations, service times and meeting information.'
+help: ''
+has_title: true
+title_label: Title
+settings:
+  node:
+    preview: '1'
+    options:
+      status: status
+      promote: 0
+      sticky: 0
+      revision: 0
+    submitted: 0
+status: true
+langcode: en

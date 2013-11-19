@@ -1,0 +1,14 @@
+id: node.locations.field_locations
+uuid: db25e389-7642-4580-812b-432bc83ad1ed
+status: true
+langcode: en
+field_uuid: fd3e52dd-0976-44f4-ad00-cf98f9c20784
+entity_type: node
+bundle: locations
+label: Locations
+description: 'Multiple locations can be added if service times are identical.'
+required: 0
+default_value: {  }
+default_value_function: ''
+settings: {  }
+field_type: bethel_location
