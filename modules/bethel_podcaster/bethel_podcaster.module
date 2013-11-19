@@ -65,50 +65,9 @@ function retrieve_remote_file_size($url) {
  * Default template: video-wrapper.html.twig.
  */
 function template_preprocess_video_wrapper(&$variables) {
-  $rawdata = file_get_contents('http://vimeo.com/api/v2/' . $variables['content']['#videofeed'] . '/videos.json');
-  
-  $matching_tags = array();
-  
-  foreach ($variables['content']['#filtered'] as $tag) {
-    $tag_entity = entity_load('taxonomy_term', $tag['target_id']);
-    $matching_tags[] = $tag_entity->getValue()['name'][0]['value'];
-  }
-  
+  $vimeo = new Drupal\bethel_podcaster\VimeoParser($variables);
+  $variables = $vimeo->variables;
   $variables['edit_access'] = node_access('update', $variables['content']['#node']);
-
-  // Decode the JSON into an array for parsing.
-  $videos = \Drupal\Component\Utility\Json::decode($rawdata);
-  $config = Drupal::config('bethel.podcaster');
-  
-  //$novideo = 0;
-
-  // Evaluate each video that Vimeo returns for the user.
-  foreach ($videos as $video) {
-    $tags = explode(', ', $video['tags']);
-
-    foreach ($tags as $tag) {
-      // Only include videos in the podcast that match tags the user has set.
-      if (in_array($tag, $matching_tags)) {
-        $durationformat = $video['duration'] < 3600 ? 'i:s' : 'H:i:s';
-        $variables['videos'][$video['id']]['title'] = $video['title'];
-        $variables['videos'][$video['id']]['url'] = $video['url'];
-        $variables['videos'][$video['id']]['description'] = $video['description'];
-        $variables['videos'][$video['id']]['length'] = $video['duration'];
-        $variables['videos'][$video['id']]['thumbnail'] = $video['thumbnail_small'];
-        $variables['videos'][$video['id']]['duration'] = date($durationformat, $video['duration']);
-        $variables['videos'][$video['id']]['video'] = $config->get('video_url.' . $video['id']);
-        $variables['videos'][$video['id']]['form'] = drupal_get_form('bethel_podcaster_video_form_' . $video['id'], $video['id']);
-        
-        /*if (!$variables['videos'][$video['id']]['video']) {
-          $novideo++;
-        }*/
-      }
-    }
-  }
-
-  /*if ($novideo > 0 && $variables['edit_access']) {
-    drupal_set_message(t($novideo . ' items in your podcast do not contain a URL to a valid video file.  These items will not be visible in iTunes until a video file is added.'), 'warning');
-  }*/
 }
 
 function bethel_podcaster_video_form($form, &$form_state, $id) {
