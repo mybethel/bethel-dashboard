@@ -21,8 +21,7 @@ class BethelAPITracking {
     $this->tid = "UA-45872811-1";
     if (isset($_COOKIE['_ga'])) {
       list($version,$domainDepth, $cid1, $cid2) = split('[\.]', $_COOKIE["_ga"],4);
-      $contents = array('version' => $version, 'domainDepth' => $domainDepth, 'cid' => $cid1.'.'.$cid2);
-      $this->cid = $contents['cid'];
+      $this->cid = $cid1.'.'.$cid2;
     }
     else $this->cid = $this->generateUUID();
     if ($info) $this->trackHit($info);

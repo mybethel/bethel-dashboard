@@ -128,7 +128,7 @@ class PodcasterController implements ContainerInjectionInterface {
     
     // Track the podcast load.
     new BethelAPITracking(array(
-      'title' => $node->title->value . 'Podcast Feed',
+      'title' => $node->title->value . ' (Podcast Feed)',
       'slug' => node_uri($node)['path'] . '/podcast.xml',
     ));
 
