@@ -7,10 +7,6 @@
 
 namespace Drupal\bethel_api;
 
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Drupal\Component\Utility\Json;
-
 class BethelAPITracking {
 
   private $tid;
