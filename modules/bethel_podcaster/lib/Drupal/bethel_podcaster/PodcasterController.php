@@ -16,6 +16,7 @@ use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Component\Utility\Json;
 use Drupal\Component\Utility\Settings;
 use Drupal\Core\Config\Config;
+use Drupal\bethel_api\BethelAPITracking;
 
 class PodcasterController implements ContainerInjectionInterface {
 
@@ -124,6 +125,12 @@ class PodcasterController implements ContainerInjectionInterface {
       'Content-Length' => strlen($podcast_xml),
       'Content-Type' => 'text/xml'
     );
+    
+    // Track the podcast load.
+    new BethelAPITracking(array(
+      'title' => $node->title->value . 'Podcast Feed',
+      'slug' => node_uri($node)['path'] . '/podcast.xml',
+    ));
 
     // Return a JSON formatted array.
     return new Response($podcast_xml, 200, $headers);
