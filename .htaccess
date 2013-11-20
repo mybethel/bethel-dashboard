@@ -56,8 +56,8 @@ DirectoryIndex index.php index.html index.htm
 <IfModule mod_rewrite.c>
   RewriteEngine on
   
-  RewriteCond %{HTTP_HOST} ^podcaster\.getbethel\.com$
-  RewriteRule ^(.*)$ http://podcaster.bethel.io/$1 [R=301,L]
+  RewriteCond %{HTTP_HOST} ^podcaster\.(getbethel\.com|bethel\.io)$
+  RewriteRule ^(.*)$ http://my.bethel.io/$1 [R=301,L]
 
   RewriteCond %{HTTP_HOST} ^api.bethel.io$
   RewriteRule ^$ http://my.bethel.io/ [R=301,L]
