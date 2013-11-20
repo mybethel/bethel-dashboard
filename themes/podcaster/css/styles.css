@@ -1,13 +1,109 @@
+@import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro|Noticia+Text:700);
+
+body {
+  background: #f0f3f8;
+  padding-top: 50px;
+}
+
+#header .navbar {
+  background: #1591b5;
+  border-color: #106982;
+  z-index: 500;
+}
+
+.toolbar-fixed #header .navbar {
+  top: 39px;
+}
+.toolbar-tray-open #header .navbar {
+  top: 79px;
+}
+
+body.toolbar-fixed { padding-top: 89px !important; }
+body.toolbar-tray-open { padding-top: 129px !important; }
+
+.navbar-inverse .navbar-brand,
+.navbar-inverse .navbar-nav>li>a {
+  color: #F2F2F2;
+}
+
+.navbar-inverse .navbar-nav>li>a {
+  font-size: 20px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+#header .navbar .navbar-brand {
+  background: url(../logo-inverse.png) 0 10px no-repeat;
+  background-size: contain;
+  width: 146px;
+  overflow: hidden;
+  text-indent: -9999px;
+  position: absolute;
+  left: 50%;
+  margin-left: -73px;
+}
+
+#sidebar-first {
+  background: #2f3946;
+  position: absolute;
+  width: 250px;
+  top: 50px;
+  bottom: 0;
+  border-right: 1px solid #1e2732;
+  position: fixed;
+}
+body.toolbar-fixed #sidebar-first { top: 89px; }
+body.toolbar-tray-open #sidebar-first { top: 129px; }
+
+#main-wrapper.sidebar_first {
+  margin-left: 251px;
+}
+
+#sidebar-first #block-main-menu .content ul {
+  margin: 0;
+  border-bottom: 1px solid #1e2732;
+  box-shadow: 0 1px 0 #384352;
+}
+#sidebar-first #block-main-menu .content ul a {
+  padding: 16px;
+  color: white;
+  border-top: 1px solid #1e2732;
+  box-shadow: inset 0 1px 0 #384352;
+  display: block;
+  font-family: 'Source Sans Pro', sans-serif;
+  font-size: 15px;
+}
+#sidebar-first #block-main-menu .content ul a:hover {
+  background: #333d4a;
+  text-decoration: none;
+}
+#sidebar-first #block-main-menu .content ul a:active {
+  background: #283341;
+  box-shadow: none;
+}
+
+#copyright {
+  position: absolute;
+  width: 250px;
+  bottom: 0;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+  font-size: 13px;
+  font-family: 'Source Sans Pro', sans-serif;
+}
+#copyright a {
+  color: rgba(255,255,255,0.4);
+}
+
+#page-title {
+  font-family: 'Noticia Text', serif;
+}
+
 .container {
 	max-width: 730px;
 	padding-top: 20px;
 	padding-bottom: 20px;
 	margin-bottom: 50px;
-}
-
-#header {
-  margin-bottom: 30px;
-  border-bottom: 1px solid #e5e5e5;
 }
 
 #header h3 {
@@ -116,15 +212,6 @@
   margin-top: -30px;
   max-width: 100%;
   height: auto;
-}
-
-.page-user:not(.page-user-edit) #page-title {
-  background: rgba(0,0,0,0.8);
-  color: white;
-  padding: 10px;
-  margin-top: -53px;
-  z-index: 5;
-  position: relative;
 }
 
 #site-name a:hover {

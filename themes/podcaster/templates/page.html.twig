@@ -79,38 +79,21 @@
  * @ingroup themeable
  */
 #}
-<div id="page-wrapper" class="container"><div id="page">
+<div id="page-wrapper"><div id="page">
 
   <header id="header" role="banner"><div class="section clearfix">
-    {% if logo %}
-      <a href="{{ front_page }}" title="{{ 'Home'|t }}" rel="home" id="logo">
-        <img src="{{ logo }}" alt="{{ 'Home'|t }}" />
-      </a>
-    {% endif %}
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <ul class="nav navbar-nav navbar-left">
+        <li class><a href="#"><span class="glyphicon glyphicon-th-list"></span></a></li>
+      </ul>
+      <a class="navbar-brand" href="#">Bethel</a>
+      <ul class="nav navbar-nav navbar-right">
+        <li class><a href="#"><span class="glyphicon glyphicon-user"></span></a></li>
+        <li class><a href="#"><span class="glyphicon glyphicon-cog"></span></a></li>
+      </ul>
+    </nav>
 
     {{ page.header }}
-
-    {% if main_menu %}
-      <nav id ="main-menu" class="nav pull-right" role="navigation">
-        {{ main_menu }}
-      </nav> <!-- /#main-menu -->
-    {% endif %}
-
-    {% if site_name or site_slogan %}
-      <div id="name-and-slogan"{% if hide_site_name and hide_site_slogan %} class="visually-hidden"{% endif %}>
-        {% if site_name %}
-            <div id="site-name"{% if hide_site_name %} class="visually-hidden"{% endif %}>
-              <a href="{{ front_page }}" title="{{ 'Home'|t }}" rel="home"><h3 class="text-muted">{{ site_name }}</h3></a>
-            </div>
-        {% endif %}
-
-        {% if site_slogan %}
-          <div id="site-slogan"{% if hide_site_slogan %} class="visually-hidden"{% endif %}>
-            {{ site_slogan }}
-          </div>
-        {% endif %}
-      </div><!-- /#name-and-slogan -->
-    {% endif %}
   </div></header> <!-- /.section, /#header-->
   
   {% if hero %}
@@ -122,9 +105,18 @@
       {{ page.featured }}
     </div></aside> <!-- /.section, /#featured -->
   {% endif %}
+  
+  {% if page.sidebar_first %}
+    <div id="sidebar-first" class="column sidebar"><aside class="section">
+      {{ page.sidebar_first }}
+      <div id="copyright">
+        <p>&copy; 2013. <a href="http://imor.tl/" target="_blank" class="navbar-link">Ideas never die.</a></p>
+      </div>
+    </aside></div><!-- /.section, /#sidebar-first -->
+  {% endif %}
 
-  <div id="main-wrapper" class="clearfix"><div id="main" class="clearfix">
-    <main id="content" class="column" role="main"><section class="section">
+  <div id="main-wrapper" class="clearfix{% if page.sidebar_first %} sidebar_first{% endif %}"><div id="main" class="clearfix">
+    <main id="content" class="column col-md-12" role="main"><section class="section">
       {% if page.highlighted %}<div id="highlighted">{{ page.highlighted }}</div>{% endif %}
       <a id="main-content"></a>
       {{ title_prefix }}
@@ -154,12 +146,6 @@
       {{ feed_icons }}
     </section></main> <!-- /.section, /#content -->
 
-    {% if page.sidebar_first %}
-      <div id="sidebar-first" class="column sidebar"><aside class="section">
-        {{ page.sidebar_first }}
-      </aside></div><!-- /.section, /#sidebar-first -->
-    {% endif %}
-
     {% if page.sidebar_second %}
       <div id="sidebar-second" class="column sidebar"><aside class="section">
         {{ page.sidebar_second }}
@@ -188,10 +174,6 @@
     {% endif %}
 
     <div id="footer" role="contentinfo" class="clearfix">
-      <nav class="navbar navbar-inverse navbar-fixed-bottom" role="navigation">
-        <a class="navbar-brand" href="http://www.bethel.io/" target="_blank">Bethel</a>
-        <p class="navbar-text pull-right">&copy; 2013.  <a href="http://imor.tl/" target="_blank" class="navbar-link">Ideas never die.</a></p>
-      </nav>
     {% if page.footer %}
         {{ page.footer }}
    {% endif %}
