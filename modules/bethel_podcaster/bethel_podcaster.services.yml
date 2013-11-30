@@ -1,0 +1,8 @@
+services:
+  cache.bethel.podcaster:
+    class: Drupal\Core\Cache\CacheBackendInterface
+    tags:
+      - { name: cache.bin }
+    factory_method: get
+    factory_service: cache_factory
+    arguments: [podcaster]

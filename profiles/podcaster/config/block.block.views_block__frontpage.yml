@@ -1,0 +1,25 @@
+id: views_block__frontpage
+uuid: cbb431c7-ca29-4a19-b200-a4b721677c89
+weight: '-1'
+status: true
+langcode: en
+theme: podcaster
+region: content
+plugin: 'views_block:frontpage_block-block_1'
+settings:
+  items_per_page: none
+  label: ''
+  module: views
+  label_display: visible
+  cache: -1
+visibility:
+  path:
+    visibility: '1'
+    pages: 'user/*'
+  role:
+    roles: {  }
+  node_type:
+    types:
+      locations: 0
+      podcast: 0
+  visibility__active_tab: edit-visibility-path

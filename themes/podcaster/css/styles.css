@@ -1,4 +1,4 @@
-@import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro|Noticia+Text:700);
+@import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700|Noticia+Text:700,400);
 
 body {
   background: #f0f3f8;
@@ -97,6 +97,10 @@ body.toolbar-tray-open #sidebar-first { top: 129px; }
 
 #page-title {
   font-family: 'Noticia Text', serif;
+}
+
+.view-header .btn {
+  margin-top: -45px;
 }
 
 .container {

@@ -1,0 +1,26 @@
+id: main_menu
+uuid: bf792a39-04f4-462c-a700-a341ab01c826
+weight: '-1'
+status: true
+langcode: en
+theme: podcaster
+region: sidebar_first
+plugin: 'system_menu_block:main'
+settings:
+  label: 'Main Menu'
+  module: system
+  label_display: 0
+  cache: -1
+visibility:
+  path:
+    visibility: '0'
+    pages: ''
+  role:
+    roles:
+      authenticated: authenticated
+      administrator: administrator
+  node_type:
+    types:
+      locations: 0
+      podcast: 0
+  visibility__active_tab: edit-visibility-path

@@ -16,6 +16,8 @@ use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Component\Utility\Json;
 use Drupal\Component\Utility\Settings;
 use Drupal\Core\Config\Config;
+use Drupal\Core\Cache\MemoryBackendFactory;
+use Drupal\Core\Cache\MemoryBackend;
 use Drupal\bethel_api\BethelAPITracking;
 
 class PodcasterController implements ContainerInjectionInterface {
@@ -26,6 +28,9 @@ class PodcasterController implements ContainerInjectionInterface {
    * @var \Drupal\Core\Config\Config
    */
   protected $config;
+  
+  protected $googleAccessToken;
+  protected $analytics;
 
   /**
    * Constructs a ThemeController object.
@@ -34,6 +39,22 @@ class PodcasterController implements ContainerInjectionInterface {
    *   The config.
    */
   public function __construct(Config $config) {
+    require_once DRUPAL_ROOT . '/libraries/google-api-php-client/src/Google_Client.php';
+    require_once DRUPAL_ROOT . '/libraries/google-api-php-client/src/contrib/Google_AnalyticsService.php';
+    
+    $this->analytics = new \Google_Client();
+    $this->analytics->setApplicationName('Bethel');
+    $this->analytics->setClientId('484936756559-42lia9gv6vcerodshrgo5i9tm0qtm553.apps.googleusercontent.com');
+    $this->analytics->setClientSecret('_ADCIOcQ8wIq1tKnyIVWfnP3');
+    $this->analytics->setRedirectUri('http://my.bethel.io/podcaster/analytics/connect');
+    $this->analytics->setDeveloperKey('AIzaSyCud0FIGPFdBIe5wafzmG4hMHFfGx8187M');
+    $this->analytics->setScopes(array('https://www.googleapis.com/auth/analytics.readonly'));
+    $this->analytics->setUseObjects(true);
+    
+    if (isset($_SESSION['token'])) {
+      $this->analytics->setAccessToken($_SESSION['token']);
+    }
+    
     $this->config = $config;
   }
   
@@ -45,6 +66,85 @@ class PodcasterController implements ContainerInjectionInterface {
       $container->get('config.factory')->get('bethel.podcaster')
     );
   }
+  
+  public function podcast_admin() {
+    global $user;
+
+    $podcast_header = array(
+      '',
+      array('data' => 'Title', 'field' => 'title', 'sort' => 'desc'),
+      array('data' => 'Type', 'field' => 'field_type'),
+      'Subscribers',
+      'Operations',
+    );
+    
+    $podcast_row = array();
+    
+    $query = \Drupal::entityQuery('node');
+    $result = $query
+      ->condition('type', 'podcast')
+      ->condition('uid', $user->id())
+      ->execute();
+    
+    $podcasts = entity_load_multiple('node', $result);
+    
+    foreach ($podcasts as $podcast) {
+      $image = entity_load('file', $podcast->get('field_image')->value);
+      $podcast_row[] = array(
+        l(theme_image_style(array('style_name' => 'thumbnail', 'uri' => $image->uri->value, 'width' => NULL, 'height' => NULL, 'attributes' => NULL)), '/node/' . $podcast->id(), array('html' => TRUE)),
+        l($podcast->getTitle(), '/node/' . $podcast->id()),
+        $podcast->get('field_type')->value,
+        $this->getSubscribers($podcast->id()),
+        '');
+    }
+    
+    $podcast_table = array(
+      'header' => $podcast_header,
+      'rows' => $podcast_row,
+      'attributes' => NULL,
+      'empty' => 'No podcasts have been created yet.',
+      'sticky' => TRUE,
+      'caption' => NULL,
+      'colgroups' => NULL,
+      'responsive' => TRUE,
+    );
+    
+    drupal_set_title('My Podcasts');
+
+    return theme_table($podcast_table);
+  }
+  
+  public function getSubscribers($node) {
+    $cache = cache('bethel.podcaster');
+    $subscribers = $cache->get('subscribers_' . $node);
+
+    if (!$subscribers) {
+      if (!$this->analytics->getAccessToken()) {
+        print $this->analytics->createAuthUrl();
+      } else {
+        $analytics = new \Google_AnalyticsService($this->analytics);
+        $visits = $analytics->data_ga->get(
+          'ga:79242714',
+          date('Y-m-d', mktime(0, 0, 0, date("m") , date("d") - 7, date("Y"))),
+          date('Y-m-d'),
+          'ga:pageviews',
+          array('dimensions' => 'ga:pagePath', 'filters' => 'ga:pagePath==/node/' . $node . '/podcast.xml'));
+        
+        $subscribers = $visits->getRows()[0][1]/7;
+        $cache->set('subscribers_' . $node, $subscribers, time()+(24*60*60));
+      }  
+    } else {
+      $subscribers = $subscribers->data;
+    }
+    
+    return $subscribers;
+  }
+  
+  public function analyticsConnect() {
+    $this->analytics->authenticate();
+    $_SESSION['token'] = $this->analytics->getAccessToken();
+    return $this->analytics->getAccessToken(); 
+  }
 
   /**
    * Generates a Podcast.
@@ -52,8 +152,8 @@ class PodcasterController implements ContainerInjectionInterface {
    * @param integer $id
    *   The node ID to built a podcast for.
    *
-   * @return \Symfony\Component\HttpFoundation\JsonResponse
-   *   The share counts as json.
+   * @return
+   *   The podcast feed in XML optimized for iTunes.
    */
   public function podcast_feed($id) {    
     // Validate the widget is valid, and the node ID is an actual node.
