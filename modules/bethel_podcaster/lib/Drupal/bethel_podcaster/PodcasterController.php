@@ -19,6 +19,7 @@ use Drupal\Core\Config\Config;
 use Drupal\Core\Cache\MemoryBackendFactory;
 use Drupal\Core\Cache\MemoryBackend;
 use Drupal\bethel_api\BethelAPITracking;
+use Drupal\bethel_podcaster\VimeoParser;
 
 class PodcasterController implements ContainerInjectionInterface {
 
@@ -180,46 +181,15 @@ class PodcasterController implements ContainerInjectionInterface {
     
     $vimeo_username = $node->field_vimeo->value;
     
-    // Get all the tags that we associate with this podcast.
-    $tag_field = $node->field_tags->getValue();
-    $matching_tags = array();
-    
-    foreach ($tag_field as $tag) {
-      $tag_entity = entity_load('taxonomy_term', $tag['target_id']);
-      $matching_tags[] = $tag_entity->name->value;
-    }
-    
-    $podcast['keywords'] = $matching_tags;
-    
-    $rawdata = file_get_contents('http://vimeo.com/api/v2/' . $vimeo_username . '/videos.json');
-    
-    // Decode the JSON into an array for parsing.
-    $videos = Json::decode($rawdata);
-    
-    // Evaluate each video that Vimeo returns for the user.
-    foreach ($videos as $video) {
-      $tags = explode(', ', $video['tags']);
-      
-      foreach ($tags as $tag) {
-        // Only include videos in the podcast that match tags the user has set.
-        if (in_array($tag, $matching_tags)) {
-          $durationformat = $video['duration'] < 3600 ? 'i:s' : 'H:i:s';
-          $podcast['items'][$video['id']]['title'] = $video['title'];
-          $podcast['items'][$video['id']]['date'] = date(DATE_RSS, strtotime($video['upload_date']));;
-          $podcast['items'][$video['id']]['link'] = $video['url'];
-          $podcast['items'][$video['id']]['description'] = $video['description'];
-          $podcast['items'][$video['id']]['length'] = $video['duration'];
-          $podcast['items'][$video['id']]['keywords'] = $video['tags'];
-          $podcast['items'][$video['id']]['image'] = $video['thumbnail_large'];
-          $podcast['items'][$video['id']]['duration'] = date($durationformat, $video['duration']);
-          $podcast['items'][$video['id']]['video'] = $this->config->get('video_url.' . $video['id']);
-          $podcast['items'][$video['id']]['video_size'] = $this->config->get('video_size.' . $video['id']);
-        }
-      }
+    if ($vimeo_username) {
+      $tags = $node->field_tags->getValue();
+      $vimeo = new VimeoParser(array('content' => array('#videofeed' => $vimeo_username, '#filtered' => $tags)));
+      $podcast['items'] = $vimeo->variables['videos'];
+      $podcast['type'] = 'video';
     }
 
     // Build the XML file from the template.
-    $podcast_xml = twig_render_template(drupal_get_path('module', 'bethel_podcaster') . '/templates/video-podcast.html.twig', $podcast);
+    $podcast_xml = twig_render_template(drupal_get_path('module', 'bethel_podcaster') . '/templates/' . $podcast['type'] . '-podcast.html.twig', $podcast);
     
     $headers = array(
       'Content-Length' => strlen($podcast_xml),
