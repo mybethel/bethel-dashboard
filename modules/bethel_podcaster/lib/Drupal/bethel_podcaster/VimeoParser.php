@@ -54,8 +54,9 @@ class VimeoParser {
           $this->variables['videos'][$video['id']]['length'] = $video['duration'];
           $this->variables['videos'][$video['id']]['thumbnail'] = $video['thumbnail_small'];
           $this->variables['videos'][$video['id']]['duration'] = date($durationformat, $video['duration']);
-          $this->variables['videos'][$video['id']]['video'] = $config->get('video_url.' . $video['id']);
-          $this->variables['videos'][$video['id']]['video_size'] = $config->get('video_size.' . $id);
+          $this->variables['videos'][$video['id']]['resource']['url'] = $config->get('video_url.' . $video['id']);
+          $this->variables['videos'][$video['id']]['resource']['size'] = $config->get('video_size.' . $video['id']);
+          $this->variables['videos'][$video['id']]['resource']['type'] = 'video/mp4';
           $this->variables['videos'][$video['id']]['form'] = drupal_get_form('bethel_podcaster_video_form_' . $video['id'], $video['id']);
         }
       }

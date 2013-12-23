@@ -30,14 +30,17 @@ function bethel_podcaster_node_view($node, $display, $view_mode, $langcode) {
     $node->content['podcast_subscript'] = array(
       '#markup' => l('Subscribe', $subscribe_link, array('attributes' => array('class' => array('btn', 'btn-lg', 'btn-primary', 'pull-right')))),
     );
-
-    $node->content['podcast_contents'] = array(
-      '#theme' => 'video_wrapper',
-      '#node' => $node,
-      '#filtered' => $node->getValue()['field_tags'],
-      '#videofeed' => 'hbcoakville',
-      '#weight' => '100',
-    );
+    
+    // If this is a Vimeo podcast, add the form to set video URLs.
+    if ($node->getValue()['field_type'][0]['value'] == 'Vimeo') {
+      $node->content['podcast_contents'] = array(
+        '#theme' => 'video_wrapper',
+        '#node' => $node,
+        '#filtered' => $node->getValue()['field_tags'],
+        '#videofeed' => 'hbcoakville',
+        '#weight' => '100',
+      );
+    }
     
     $config = Drupal::config('bethel.podcaster');
   }

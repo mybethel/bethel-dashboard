@@ -35,7 +35,7 @@
     <itunes:explicit>no</itunes:explicit>
     <itunes:keywords>{{ item.keywords }}</itunes:keywords>
     <itunes:image href="{{ item.image }}" />
-    <enclosure url="{{ item.video }}" length="{{ item.video_size }}" type="video/mp4" />
+    <enclosure url="{{ item.resource.url }}" length="{{ item.resource.size }}" type="{{ item.resource.type }}" />
     <itunes:block>no</itunes:block>
   </item>
 {% endfor %}

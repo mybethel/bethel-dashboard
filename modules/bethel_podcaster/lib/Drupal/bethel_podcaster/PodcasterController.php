@@ -20,6 +20,7 @@ use Drupal\Core\Cache\MemoryBackendFactory;
 use Drupal\Core\Cache\MemoryBackend;
 use Drupal\bethel_api\BethelAPITracking;
 use Drupal\bethel_podcaster\VimeoParser;
+use Drupal\bethel_podcaster\BethelParser;
 
 class PodcasterController implements ContainerInjectionInterface {
 
@@ -181,10 +182,14 @@ class PodcasterController implements ContainerInjectionInterface {
     
     $vimeo_username = $node->field_vimeo->value;
     
-    if ($vimeo_username) {
+    if ($node->field_type->value == "Vimeo") {
       $tags = $node->field_tags->getValue();
       $vimeo = new VimeoParser(array('content' => array('#videofeed' => $vimeo_username, '#filtered' => $tags)));
       $podcast['items'] = $vimeo->variables['videos'];
+      $podcast['type'] = 'video';
+    } else {
+      $bethel = new BethelParser('http://coastal.getbethel.com');
+      $podcast['items'] = $bethel->variables['podcast'];
       $podcast['type'] = 'video';
     }
 
