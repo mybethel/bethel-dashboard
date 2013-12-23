@@ -8,6 +8,7 @@
 namespace Drupal\bethel_podcaster;
 
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -91,13 +92,14 @@ class PodcasterController implements ContainerInjectionInterface {
     $podcasts = entity_load_multiple('node', $result);
     
     foreach ($podcasts as $podcast) {
-      $image = entity_load('file', $podcast->get('field_image')->value);
+      $podcast_image = field_view_field($podcast, 'field_image', 'teaser');
       $podcast_row[] = array(
-        l(theme_image_style(array('style_name' => 'thumbnail', 'uri' => $image->uri->value, 'width' => NULL, 'height' => NULL, 'attributes' => NULL)), '/node/' . $podcast->id(), array('html' => TRUE)),
+        drupal_render($podcast_image),
         l($podcast->getTitle(), '/node/' . $podcast->id()),
         $podcast->get('field_type')->value,
         $this->getSubscribers($podcast->id()),
-        '');
+        '',
+      );
     }
     
     $podcast_table = array(
@@ -121,18 +123,20 @@ class PodcasterController implements ContainerInjectionInterface {
     $subscribers = $cache->get('subscribers_' . $node);
 
     if (!$subscribers) {
+      $this->analyticsConfirmToken();
+      
       if (!$this->analytics->getAccessToken()) {
         print $this->analytics->createAuthUrl();
       } else {
         $analytics = new \Google_AnalyticsService($this->analytics);
         $visits = $analytics->data_ga->get(
           'ga:79242714',
-          date('Y-m-d', mktime(0, 0, 0, date("m") , date("d") - 7, date("Y"))),
+          date('Y-m-d', mktime(0, 0, 0, date("m"), date("d") - 7, date("Y"))),
           date('Y-m-d'),
           'ga:pageviews',
           array('dimensions' => 'ga:pagePath', 'filters' => 'ga:pagePath==/node/' . $node . '/podcast.xml'));
         
-        $subscribers = $visits->getRows()[0][1]/7;
+        $subscribers = round($visits->getRows()[0][1]/7);
         $cache->set('subscribers_' . $node, $subscribers, time()+(24*60*60));
       }  
     } else {
@@ -144,8 +148,25 @@ class PodcasterController implements ContainerInjectionInterface {
   
   public function analyticsConnect() {
     $this->analytics->authenticate();
-    $_SESSION['token'] = $this->analytics->getAccessToken();
-    return $this->analytics->getAccessToken(); 
+    $access_token = $this->analytics->getAccessToken();
+    
+    $config = \Drupal::config('bethel.gapi');
+    $config->set('access_token', $access_token)->save();
+    
+    return new RedirectResponse(\Drupal::url('bethel_podcaster.podcast_admin'));; 
+  }
+  
+  private function analyticsConfirmToken() {
+    $config = \Drupal::config('bethel.gapi');
+    $access_token = $config->get('access_token');
+    
+    if ($access_token) {
+      $this->analytics->setAccessToken($access_token);
+    }
+    
+    if($this->analytics->isAccessTokenExpired()) {
+      $this->analytics->refreshToken($access_token);
+    }
   }
 
   /**
