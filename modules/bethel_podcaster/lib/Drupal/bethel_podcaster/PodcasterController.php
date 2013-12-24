@@ -165,7 +165,8 @@ class PodcasterController implements ContainerInjectionInterface {
     }
     
     if($this->analytics->isAccessTokenExpired()) {
-      $this->analytics->refreshToken($access_token);
+      $credentials = \Drupal\Component\Utility\Json::decode($access_token);
+      $this->analytics->refreshToken($credentials['refresh_token']);
     }
   }
 
