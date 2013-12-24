@@ -75,10 +75,10 @@ class PodcasterController implements ContainerInjectionInterface {
 
     $podcast_header = array(
       '',
-      array('data' => 'Title', 'field' => 'title', 'sort' => 'desc'),
-      array('data' => 'Type', 'field' => 'field_type'),
-      'Subscribers',
-      'Operations',
+      array('data' => 'Title', 'class' => array('title', 'text-muted')),
+      array('data' => 'Type', 'class' => array('type', 'text-muted')),
+      array('data' => 'Subscribers', 'class' => array('subscribers', 'text-muted')),
+      '',
     );
     
     $podcast_row = array();
@@ -94,11 +94,11 @@ class PodcasterController implements ContainerInjectionInterface {
     foreach ($podcasts as $podcast) {
       $podcast_image = field_view_field($podcast, 'field_image', 'teaser');
       $podcast_row[] = array(
-        drupal_render($podcast_image),
-        l($podcast->getTitle(), '/node/' . $podcast->id()),
-        $podcast->get('field_type')->value,
-        $this->getSubscribers($podcast->id()),
-        '',
+        array('data' => drupal_render($podcast_image), 'class' => 'thumb'),
+        array('data' => l($podcast->getTitle(), '/node/' . $podcast->id()), 'class' => 'title'),
+        array('data' => $podcast->get('field_type')->value, 'class' => 'type'),
+        array('data' => $this->getSubscribers($podcast->id()), 'class' => 'subscribers'),
+        array('data' => l('Edit', '/node/' . $podcast->id() . '/edit', array('attributes' => array('class' => array('btn', 'btn-default', 'btn-sm')))) . ' ' . l('Delete', '/node/' . $podcast->id() . '/delete', array('attributes' => array('class' => array('btn', 'btn-danger', 'btn-sm')))), 'class' => 'operations'),
       );
     }
     
@@ -115,7 +115,7 @@ class PodcasterController implements ContainerInjectionInterface {
     
     drupal_set_title('My Podcasts');
 
-    return theme_table($podcast_table);
+    return l('New Podcast', '/node/add/podcast', array('attributes' => array('class' => array('add-btn', 'btn', 'btn-primary', 'pull-right')))) . theme_table($podcast_table);
   }
   
   public function getSubscribers($node) {
