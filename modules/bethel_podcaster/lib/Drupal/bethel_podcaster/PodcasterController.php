@@ -97,7 +97,7 @@ class PodcasterController implements ContainerInjectionInterface {
         array('data' => drupal_render($podcast_image), 'class' => 'thumb'),
         array('data' => l($podcast->getTitle(), '/node/' . $podcast->id()), 'class' => 'title'),
         array('data' => $podcast->get('field_type')->value, 'class' => 'type'),
-        array('data' => $this->getSubscribers($podcast->id()), 'class' => 'subscribers'),
+        array('data' => '<span data-toggle="tooltip" data-placement="bottom" title="The average number of daily subscribers over the past 7 days.">' . $this->getSubscribers($podcast->id()) . '</span>', 'class' => 'subscribers'),
         array('data' => l('Edit', '/node/' . $podcast->id() . '/edit', array('attributes' => array('class' => array('btn', 'btn-default', 'btn-sm')))) . ' ' . l('Delete', '/node/' . $podcast->id() . '/delete', array('attributes' => array('class' => array('btn', 'btn-danger', 'btn-sm')))), 'class' => 'operations'),
       );
     }
@@ -114,6 +114,8 @@ class PodcasterController implements ContainerInjectionInterface {
     );
     
     drupal_set_title('My Podcasts');
+    
+    drupal_add_js('jQuery(document).ready(function () { jQuery("td.subscribers span").tooltip() });', 'inline');
 
     return l('New Podcast', '/node/add/podcast', array('attributes' => array('class' => array('add-btn', 'btn', 'btn-primary', 'pull-right')))) . theme_table($podcast_table);
   }

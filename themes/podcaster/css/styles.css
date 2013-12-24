@@ -295,7 +295,7 @@ body.toolbar-tray-open #sidebar-first { top: 129px; }
   font-weight: 200;
 }
 
-.page-podcaster table.responsive-enabled td.subscribers {
+.page-podcaster table.responsive-enabled td.subscribers span {
   font-size: 22px;
   font-family: 'Noticia Text', serif;
 }
