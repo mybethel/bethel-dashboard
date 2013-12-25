@@ -1,0 +1,19 @@
+id: node.field_type
+uuid: 9218f342-2ac5-4ba5-b000-fc0a76badb42
+status: true
+langcode: en
+name: field_type
+entity_type: node
+type: list_text
+settings:
+  allowed_values:
+    Bethel: Bethel
+    Vimeo: Vimeo
+    YouTube: YouTube
+  allowed_values_function: ''
+module: options
+active: true
+locked: false
+cardinality: '1'
+translatable: false
+indexes: {  }

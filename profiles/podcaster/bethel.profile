@@ -9,7 +9,7 @@
  *
  * Allows the profile to alter the site configuration form.
  */
-function podcaster_form_install_configure_form_alter(&$form, $form_state) {
+function bethel_form_install_configure_form_alter(&$form, $form_state) {
   // Pre-populate the site name with the server name.
   $form['site_information']['site_name']['#default_value'] = 'Bethel';
   $form['regional_settings']['site_default_country']['#default_value'] = 'US';

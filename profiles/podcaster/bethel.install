@@ -11,7 +11,7 @@
  *
  * @see system_install()
  */
-function podcaster_install() {
+function bethel_install() {
   // Enable Bartik theme and set it as default theme instead of Stark.
   // @see system_install()
   $default_theme = 'podcaster';
@@ -32,7 +32,18 @@ function podcaster_install() {
   module_load_install('user');
   
   $file = new stdClass();
-  $file->uri = drupal_get_path('profile', 'podcaster') . '/images/hero.jpg';
+  $file->uri = drupal_get_path('profile', 'bethel') . '/images/hero.jpg';
+  $file->filename = drupal_basename($file->uri);
+  $file->filemime = file_get_mimetype($file->uri);
+  $file->uid = 1;
+  $file->timestamp = REQUEST_TIME;
+  $file->filesize = filesize($file->uri);
+  $file->status = 0;
+  $default_pic = entity_create('file', (array)$file);
+  file_copy($default_pic, 'public://default_images/', FILE_EXISTS_REPLACE);
+  
+  $file = new stdClass();
+  $file->uri = drupal_get_path('profile', 'bethel') . '/images/podcast-default.jpg';
   $file->filename = drupal_basename($file->uri);
   $file->filemime = file_get_mimetype($file->uri);
   $file->uid = 1;

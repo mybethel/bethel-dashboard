@@ -1,0 +1,14 @@
+id: node.podcast.field_type
+uuid: 587aa23e-da66-43a6-af07-7e73a4df2ae7
+status: true
+langcode: en
+field_uuid: 9218f342-2ac5-4ba5-b000-fc0a76badb42
+entity_type: node
+bundle: podcast
+label: Source
+description: 'Select where the podcast feed will originate.'
+required: 1
+default_value: {  }
+default_value_function: ''
+settings: {  }
+field_type: list_text
