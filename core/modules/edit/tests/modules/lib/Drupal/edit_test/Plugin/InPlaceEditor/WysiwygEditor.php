@@ -8,7 +8,6 @@
 namespace Drupal\edit_test\Plugin\InPlaceEditor;
 
 use Drupal\edit\EditorBase;
-use Drupal\edit\Annotation\InPlaceEditor;
 use Drupal\Core\Field\FieldDefinitionInterface;
 
 /**
@@ -26,13 +25,13 @@ class WysiwygEditor extends EditorBase {
    */
   function isCompatible(FieldDefinitionInterface $field_definition, array $items) {
     // This editor is incompatible with multivalued fields.
-    if ($field_definition->getFieldCardinality() != 1) {
+    if ($field_definition->getCardinality() != 1) {
       return FALSE;
     }
     // This editor is compatible with processed ("rich") text fields; but only
     // if there is a currently active text format and that text format is the
     // 'full_html' text format.
-    elseif ($field_definition->getFieldSetting('text_processing')) {
+    elseif ($field_definition->getSetting('text_processing')) {
       $format_id = $items[0]['format'];
       if (isset($format_id) && $format_id === 'full_html') {
         return TRUE;
@@ -51,7 +50,7 @@ class WysiwygEditor extends EditorBase {
   }
 
   /**
-   * Implements \Drupal\edit\EditPluginInterface::getAttachments().
+   * {@inheritdoc}
    */
   public function getAttachments() {
     return array(
@@ -60,4 +59,5 @@ class WysiwygEditor extends EditorBase {
       ),
     );
   }
+
 }

@@ -2,9 +2,7 @@
 
 /**
  * @file
- * Provide views data and handlers for user.module.
- *
- * @ingroup views_module_handlers
+ * Provide views data for user.module.
  */
 
 use Drupal\views\ViewExecutable;
@@ -36,6 +34,7 @@ function user_views_data() {
     'argument' => array(
       'id' => 'user_uid',
       'name field' => 'name',
+      'empty field name' => \Drupal::config('user.settings')->get('anonymous'),
     ),
     'filter' => array(
       'title' => t('Name'),

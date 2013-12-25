@@ -20,11 +20,6 @@ use Drupal\Core\Entity\EntityChangedInterface;
 class CommentStorageController extends FieldableDatabaseStorageController implements CommentStorageControllerInterface {
 
   /**
-   * The thread for which a lock was acquired.
-   */
-  protected $threadLock = '';
-
-  /**
    * {@inheritdoc}
    */
   protected function buildQuery($ids, $revision_id = FALSE) {
@@ -39,12 +34,12 @@ class CommentStorageController extends FieldableDatabaseStorageController implem
   /**
    * {@inheritdoc}
    */
-  protected function attachLoad(&$records, $load_revision = FALSE) {
+  protected function postLoad(array &$queried_entities) {
     // Prepare standard comment fields.
-    foreach ($records as &$record) {
+    foreach ($queried_entities as &$record) {
       $record->name = $record->uid ? $record->registered_name : $record->name;
     }
-    parent::attachLoad($records, $load_revision);
+    parent::postLoad($queried_entities);
   }
 
   /**
@@ -62,7 +57,7 @@ class CommentStorageController extends FieldableDatabaseStorageController implem
     $count = $query->condition('c.entity_id', $comment->entity_id->value)
       ->condition('c.entity_type', $comment->entity_type->value)
       ->condition('c.field_id', $comment->field_id->value)
-      ->condition('c.status', COMMENT_PUBLISHED)
+      ->condition('c.status', CommentInterface::PUBLISHED)
       ->execute()
       ->fetchField();
 
@@ -73,7 +68,7 @@ class CommentStorageController extends FieldableDatabaseStorageController implem
         ->condition('c.entity_id', $comment->entity_id->value)
         ->condition('c.entity_type', $comment->entity_type->value)
         ->condition('c.field_id', $comment->field_id->value)
-        ->condition('c.status', COMMENT_PUBLISHED)
+        ->condition('c.status', CommentInterface::PUBLISHED)
         ->orderBy('c.created', 'DESC')
         ->range(0, 1)
         ->execute()
@@ -154,4 +149,5 @@ class CommentStorageController extends FieldableDatabaseStorageController implem
       ->execute()
       ->fetchCol();
   }
+
 }

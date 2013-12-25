@@ -14,36 +14,6 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\node\NodeInterface;
 
 /**
- * Page callback: Displays add content links for available content types.
- *
- * Redirects to node/add/[type] if only one content type is available.
- *
- * @return array
- *   A render array for a list of the node types that can be added; however, if
- *   there is only one node type defined for the site, the function redirects
- *   to the node add page for that one node type and does not return at all.
- *
- * @see node_menu()
- *
- * @deprecated Use \Drupal\node\Controller\NodeController::addPage()
- */
-function node_add_page() {
-  $content = array();
-  // Only use node types the user has access to.
-  foreach (node_type_get_types() as $type) {
-    if (node_access('create', $type->type)) {
-      $content[$type->type] = $type;
-    }
-  }
-  // Bypass the node/add listing if only one content type is available.
-  if (count($content) == 1) {
-    $type = array_shift($content);
-    return new RedirectResponse(url('node/add/' . $type->type, array('absolute' => TRUE)));
-  }
-  return array('#theme' => 'node_add_list', '#content' => $content);
-}
-
-/**
  * Returns HTML for a list of available node types for node creation.
  *
  * @param $variables
@@ -71,34 +41,6 @@ function theme_node_add_list($variables) {
   return $output;
 }
 
-
-/**
- * Page callback: Provides the node submission form.
- *
- * @param $node_type
- *   The node type object for the submitted node.
- *
- * @return array
- *   A node submission form.
- *
- * @see node_menu()
- *
- * @deprecated Use \Drupal\node\Controller\NodeController::add()
- */
-function node_add($node_type) {
-  $user = \Drupal::currentUser();
-
-  $type = $node_type->type;
-  $langcode = module_invoke('language', 'get_default_langcode', 'node', $type);
-  $node = entity_create('node', array(
-    'uid' => $user->id(),
-    'name' => $user->getUsername(),
-    'type' => $type,
-    'langcode' => $langcode ? $langcode : language_default()->id,
-  ));
-  return \Drupal::entityManager()->getForm($node);
-}
-
 /**
  * Generates a node preview.
  *
@@ -110,13 +52,13 @@ function node_add($node_type) {
  *
  * @see node_form_build_preview()
  */
-function node_preview(NodeInterface $node) {
-  if (node_access('create', $node) || node_access('update', $node)) {
+function node_preview(NodeInterface $node, array &$form_state) {
+  if ($node->access('create') || $node->access('update')) {
 
     $node->changed = REQUEST_TIME;
 
     // Display a preview of the node.
-    if (!form_get_errors()) {
+    if (!form_get_errors($form_state)) {
       $node->in_preview = TRUE;
       $node_preview = array(
         '#theme' => 'node_preview',
@@ -182,7 +124,7 @@ function theme_node_preview($variables) {
  * @deprecated Use \Drupal\node\Controller\NodeController::revisionOverview()
  */
 function node_revision_overview($node) {
-  drupal_set_title(t('Revisions for %title', array('%title' => $node->label())), PASS_THROUGH);
+  $build['#title'] = t('Revisions for %title', array('%title' => $node->label()));
 
   $header = array(t('Revision'), t('Operations'));
 
@@ -192,11 +134,11 @@ function node_revision_overview($node) {
   $type = $node->getType();
 
   $revert_permission = FALSE;
-  if ((user_access("revert $type revisions") || user_access('revert all revisions') || user_access('administer nodes')) && node_access('update', $node)) {
+  if ((user_access("revert $type revisions") || user_access('revert all revisions') || user_access('administer nodes')) && $node->access('update')) {
     $revert_permission = TRUE;
   }
   $delete_permission = FALSE;
-  if ((user_access("delete $type revisions") || user_access('delete all revisions') || user_access('administer nodes')) && node_access('delete', $node)) {
+  if ((user_access("delete $type revisions") || user_access('delete all revisions') || user_access('administer nodes')) && $node->access('delete')) {
     $delete_permission = TRUE;
   }
   foreach ($revisions as $revision) {

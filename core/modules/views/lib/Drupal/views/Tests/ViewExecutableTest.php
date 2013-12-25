@@ -2,11 +2,12 @@
 
 /**
  * @file
- * Contains \Drupal\views\Tests\ViewExecutableUnitTest.
+ * Contains \Drupal\views\Tests\ViewExecutableTest.
  */
 
 namespace Drupal\views\Tests;
 
+use Drupal\views\Views;
 use Drupal\views\ViewExecutable;
 use Drupal\views\ViewExecutableFactory;
 use Drupal\views\DisplayBag;
@@ -360,8 +361,9 @@ class ViewExecutableTest extends ViewUnitTestBase {
   protected function assertViewDestroy($view) {
     $reflection = new \ReflectionClass($view);
     $defaults = $reflection->getDefaultProperties();
-    // The storage should remain.
+    // The storage and user should remain.
     unset($defaults['storage']);
+    unset($defaults['user']);
 
     foreach ($defaults as $property => $default) {
       $this->assertIdentical($this->getProtectedProperty($view, $property), $default);

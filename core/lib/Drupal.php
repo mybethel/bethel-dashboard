@@ -106,8 +106,8 @@ class Drupal {
   /**
    * Returns the currently active global container.
    *
-   * @deprecated This method is only useful for the testing environment, and as
-   *   a BC shiv for drupal_container(). It should not be used otherwise.
+   * @deprecated This method is only useful for the testing environment. It
+   * should not be used otherwise.
    *
    * @return \Symfony\Component\DependencyInjection\ContainerInterface
    */
@@ -288,7 +288,7 @@ class Drupal {
    * needs to be the same across development, production, etc. environments
    * (for example, the system maintenance message) should use \Drupal::config() instead.
    *
-   * @return \Drupal\Core\KeyValueStore\KeyValueStoreInterface
+   * @return \Drupal\Core\KeyValueStore\StateInterface
    */
   public static function state() {
     return static::$container->get('state');

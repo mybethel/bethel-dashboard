@@ -25,6 +25,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   label = @Translation("Comment list"),
  *   field_types = {
  *     "comment"
+ *   },
+ *   edit = {
+ *     "editor" = "disabled"
+ *   },
+ *   settings = {
+ *     "pager_id" = 0
  *   }
  * )
  */
@@ -85,12 +91,12 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
    *   The view mode.
    * @param \Drupal\Core\Session\AccountInterface $current_user
    *   The current user.
-   * @param \Drupal\comment\CommentStorageControllerInterface
+   * @param \Drupal\comment\CommentStorageControllerInterface $comment_storage_controller
    *   The comment storage controller.
-   * @param \Drupal\Core\Entity\EntityViewBuilderInterface
+   * @param \Drupal\Core\Entity\EntityViewBuilderInterface $comment_view_builder
    *   The comment view builder.
    */
-  public function __construct($plugin_id, array $plugin_definition,  FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, AccountInterface $current_user, CommentStorageControllerInterface $comment_storage_controller, EntityViewBuilderInterface $comment_view_builder) {
+  public function __construct($plugin_id, array $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, AccountInterface $current_user, CommentStorageControllerInterface $comment_storage_controller, EntityViewBuilderInterface $comment_view_builder) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode);
     $this->viewBuilder = $comment_view_builder;
     $this->storageController = $comment_storage_controller;
@@ -104,7 +110,7 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
     $elements = array();
     $output = array();
 
-    $field_name = $this->fieldDefinition->getFieldName();
+    $field_name = $this->fieldDefinition->getName();
     $entity = $items->getEntity();
 
     $status = $items->status;
@@ -124,11 +130,14 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
         $this->currentUser->hasPermission('administer comments'))) {
         $mode = $comment_settings['default_mode'];
         $comments_per_page = $comment_settings['per_page'];
-        if ($cids = comment_get_thread($entity, $field_name, $mode, $comments_per_page)) {
+        if ($cids = comment_get_thread($entity, $field_name, $mode, $comments_per_page, $this->settings['pager_id'])) {
           $comments = $this->storageController->loadMultiple($cids);
           comment_prepare_thread($comments);
           $build = $this->viewBuilder->viewMultiple($comments);
           $build['pager']['#theme'] = 'pager';
+          if (!empty($this->settings['pager_id'])) {
+            $build['pager']['#element'] = $this->settings['pager_id'];
+          }
           $output['comments'] = $build;
         }
       }
@@ -138,7 +147,24 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
       if ($status == COMMENT_OPEN && $comment_settings['form_location'] == COMMENT_FORM_BELOW) {
         // Only show the add comment form if the user has permission.
         if ($this->currentUser->hasPermission('post comments')) {
-          $output['comment_form'] = comment_add($entity, $field_name);
+          // All users in the "anonymous" role can use the same form: it is fine
+          // for this form to be stored in the render cache.
+          if ($this->currentUser->isAnonymous()) {
+            $output['comment_form'] = comment_add($entity, $field_name);
+          }
+          // All other users need a user-specific form, which would break the
+          // render cache: hence use a #post_render_cache callback.
+          else {
+            $output['comment_form'] = array(
+              '#type' => 'render_cache_placeholder',
+              '#callback' => '\Drupal\comment\Plugin\Field\FieldFormatter\CommentDefaultFormatter::renderForm',
+              '#context' => array(
+                'entity_type' => $entity->entityType(),
+                'entity_id' => $entity->id(),
+                'field_name' => $field_name,
+              ),
+            );
+          }
         }
       }
 
@@ -152,6 +178,51 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
     }
 
     return $elements;
+  }
+
+  /**
+   * #post_render_cache callback; replaces placeholder with comment form.
+   *
+   * @param array $context
+   *   An array with the following keys:
+   *   - entity_type: an entity type
+   *   - entity_id: an entity ID
+   *   - field_name: a comment field name
+   *
+   * @return array
+   *   A renderable array containing the comment form.
+   */
+  public static function renderForm(array $context) {
+    $entity = entity_load($context['entity_type'], $context['entity_id']);
+    return comment_add($entity, $context['field_name']);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsForm(array $form, array &$form_state) {
+    $element = array();
+    $element['pager_id'] = array(
+      '#type' => 'select',
+      '#title' => $this->t('Pager ID'),
+      '#options' => range(0, 10),
+      '#default_value' => empty($this->settings['pager_id']) ? 0 : $this->settings['pager_id'],
+      '#description' => $this->t("Unless you're experiencing problems with pagers related to this field, you should leave this at 0. If using multiple pagers on one page you may need to set this number to a higher value so as not to conflict within the ?page= array. Large values will add a lot of commas to your URLs, so avoid if possible."),
+    );
+    return $element;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsSummary() {
+    // Only show a summary if we're using a non-standard pager id.
+    if (!empty($this->settings['pager_id'])) {
+      return array($this->t('Pager ID: @id', array(
+        '@id' => $this->settings['pager_id'],
+      )));
+    }
+    return array();
   }
 
 }

@@ -137,7 +137,11 @@ abstract class FilterFormatFormControllerBase extends EntityFormController {
       '#attributes' => array('id' => 'filter-order'),
       '#title' => t('Filter processing order'),
       '#tabledrag' => array(
-        array('order', 'sibling', 'filter-order-weight'),
+        array(
+         'action' => 'order',
+         'relationship' => 'sibling',
+         'group' => 'filter-order-weight',
+        ),
       ),
       '#tree' => FALSE,
       '#input' => FALSE,
@@ -232,7 +236,7 @@ abstract class FilterFormatFormControllerBase extends EntityFormController {
       ->condition('name', $format_name)
       ->execute();
     if ($format_exists) {
-      form_set_error('name', t('Text format names must be unique. A format named %name already exists.', array('%name' => $format_name)));
+      $this->setFormError('name', $form_state, $this->t('Text format names must be unique. A format named %name already exists.', array('%name' => $format_name)));
     }
   }
 

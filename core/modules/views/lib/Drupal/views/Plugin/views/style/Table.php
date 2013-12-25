@@ -9,8 +9,6 @@ namespace Drupal\views\Plugin\views\style;
 
 use Drupal\Component\Plugin\Discovery\DiscoveryInterface;
 use Drupal\views\Plugin\views\wizard\WizardInterface;
-use Drupal\views\Annotation\ViewsStyle;
-use Drupal\Core\Annotation\Translation;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -438,7 +436,7 @@ class Table extends StylePluginBase {
   }
 
   public function wizardSubmit(&$form, &$form_state, WizardInterface $wizard, &$display_options, $display_type) {
-    // If any of the displays use the table style, take sure that the fields
+    // If any of the displays use the table style, make sure that the fields
     // always have a labels by unsetting the override.
     foreach ($display_options['default']['fields'] as &$field) {
       unset($field['label']);

@@ -67,6 +67,7 @@ function config_install_default_config($type, $name) {
     $config_factory = Drupal::service('config.factory');
     $context = new FreeConfigContext(Drupal::service('event_dispatcher'), Drupal::service('uuid'));
     $target_storage = Drupal::service('config.storage');
+    $typed_config = Drupal::service('config.typed');
     $config_factory->enterContext($context);
     foreach ($config_to_install as $name) {
       // Only import new config.
@@ -74,7 +75,7 @@ function config_install_default_config($type, $name) {
         continue;
       }
 
-      $new_config = new Config($name, $target_storage, $context);
+      $new_config = new Config($name, $target_storage, $context, $typed_config);
       $data = $source_storage->read($name);
       if ($data !== FALSE) {
         $new_config->setData($data);
@@ -105,7 +106,7 @@ function config_install_default_config($type, $name) {
  *   The name of the module or theme to install default configuration for.
  */
 function config_uninstall_default_config($type, $name) {
-  $storage = drupal_container()->get('config.storage');
+  $storage = \Drupal::service('config.storage');
   $config_names = $storage->listAll($name . '.');
   foreach ($config_names as $config_name) {
     \Drupal::config($config_name)->delete();
@@ -118,7 +119,7 @@ function config_uninstall_default_config($type, $name) {
  * @see \Drupal\Core\Config\StorageInterface::listAll()
  */
 function config_get_storage_names_with_prefix($prefix = '') {
-  return drupal_container()->get('config.storage')->listAll($prefix);
+  return \Drupal::service('config.storage')->listAll($prefix);
 }
 
 /**
@@ -162,18 +163,19 @@ function config($name) {
  *   The configuration context object.
  */
 function config_context_enter($context_name) {
-  if (drupal_container()->has($context_name)) {
-    $context = drupal_container()->get($context_name);
+  $container = \Drupal::getContainer();
+  if ($container->has($context_name)) {
+    $context = $container->get($context_name);
   }
   elseif (class_exists($context_name) && in_array('Drupal\Core\Config\Context\ContextInterface', class_implements($context_name))) {
-    $context = drupal_container()
+    $context = $container
       ->get('config.context.factory')
       ->get($context_name);
   }
   else {
     throw new ConfigException(sprintf('Unknown config context service or class: %s', $context_name));
   }
-  drupal_container()
+  $container
     ->get('config.factory')
     ->enterContext($context);
   return $context;
@@ -186,8 +188,7 @@ function config_context_enter($context_name) {
  * @see \Drupal\Core\Config\ConfigFactory
  */
 function config_context_leave() {
-  drupal_container()
-    ->get('config.factory')
+  \Drupal::service('config.factory')
     ->leaveContext();
 }
 
@@ -214,10 +215,10 @@ function config_get_entity_type_by_name($name) {
  *
  * @see \Drupal\Core\TypedData\TypedDataManager::create()
  *
- * @return \Drupal\Core\TypedData\TypedConfigManager
+ * @return \Drupal\Core\Config\TypedConfigManager
  */
 function config_typed() {
-  return drupal_container()->get('config.typed');
+  return \Drupal::service('config.typed');
 }
 
 /**

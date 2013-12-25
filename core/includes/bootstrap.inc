@@ -457,25 +457,28 @@ function config_get_config_directory($type = CONFIG_ACTIVE_DIRECTORY) {
  * 'REMOTE_ADDR' key.
  *
  * @param $variables
- *   (optional) An associative array of variables within $_SERVER that should
- *   be replaced. If the special element 'url' is provided in this array, it
- *   will be used to populate some of the server defaults; it should be set to
- *   the URL of the current page request, excluding any $_GET request but
- *   including the script name (e.g., http://www.example.com/mysite/index.php).
+ *   (optional) An associative array of variables within
+ *   \Drupal::request()->server that should be replaced. If the special element
+ *   'url' is provided in this array, it will be used to populate some of the
+ *   server defaults; it should be set to the URL of the current page request,
+ *   excluding any GET request but including the script name
+ *   (e.g., http://www.example.com/mysite/index.php).
  *
  * @see conf_path()
  * @see request_uri()
  * @see \Symfony\Component\HttpFoundation\Request::getClientIP()
  */
 function drupal_override_server_variables($variables = array()) {
+  $request = \Drupal::request();
+  $server_vars = $request->server->all();
   // Allow the provided URL to override any existing values in $_SERVER.
   if (isset($variables['url'])) {
     $url = parse_url($variables['url']);
     if (isset($url['host'])) {
-      $_SERVER['HTTP_HOST'] = $url['host'];
+      $server_vars['HTTP_HOST'] = $url['host'];
     }
     if (isset($url['path'])) {
-      $_SERVER['SCRIPT_NAME'] = $url['path'];
+      $server_vars['SCRIPT_NAME'] = $url['path'];
     }
     unset($variables['url']);
   }
@@ -492,7 +495,10 @@ function drupal_override_server_variables($variables = array()) {
     'HTTP_USER_AGENT' => NULL,
   );
   // Replace elements of the $_SERVER array, as appropriate.
-  $_SERVER = $variables + $_SERVER + $defaults;
+  $request->server->replace($variables + $server_vars + $defaults);
+
+  // @todo remove once conf_path() no longer uses $_SERVER.
+  $_SERVER = $request->server->all();
 }
 
 /**
@@ -1552,7 +1558,7 @@ function watchdog($type, $message, array $variables = NULL, $severity = WATCHDOG
       $log_entry['referer'] = $request->headers->get('Referer', '');
       $log_entry['ip'] = $request->getClientIP();
     }
-    catch (\InvalidArgumentException $e) {
+    catch (DependencyInjectionRuntimeException $e) {
       // We are not in a request context.
     }
 
@@ -1718,9 +1724,18 @@ function drupal_set_title($title = NULL, $output = Title::CHECK_PLAIN) {
  *   The user session object.
  */
 function drupal_anonymous_user() {
+  try {
+    $request = \Drupal::request();
+    $hostname = $request->getClientIP();
+  }
+  catch (DependencyInjectionRuntimeException $e) {
+    // We are not in a request context.
+    $hostname = '';
+  }
+
   $values = array(
     'uid' => 0,
-    'hostname' => \Drupal::request()->getClientIP(),
+    'hostname' => $hostname,
     'roles' => array(DRUPAL_ANONYMOUS_RID),
   );
   return new UserSession($values);
@@ -1861,10 +1876,13 @@ function drupal_handle_request($test_only = FALSE) {
   // @todo Remove this once everything in the bootstrap has been
   //   converted to services in the DIC.
   $kernel->boot();
-  drupal_bootstrap(DRUPAL_BOOTSTRAP_CODE);
 
   // Create a request object from the HttpFoundation.
   $request = Request::createFromGlobals();
+  \Drupal::getContainer()->set('request', $request);
+
+  drupal_bootstrap(DRUPAL_BOOTSTRAP_CODE);
+
   $response = $kernel->handle($request)->prepare($request)->send();
 
   $kernel->terminate($request, $response);
@@ -1994,6 +2012,8 @@ function _drupal_bootstrap_kernel() {
   if (!\Drupal::getContainer()) {
     $kernel = new DrupalKernel('prod', drupal_classloader());
     $kernel->boot();
+    $request = Request::createFromGlobals();
+    \Drupal::getContainer()->set('request', $request);
   }
 }
 
@@ -2105,20 +2125,6 @@ function _drupal_bootstrap_variables() {
  */
 function drupal_get_bootstrap_phase() {
   return drupal_bootstrap();
-}
-
-/**
- * Retrieves the Drupal Container to standardize object construction.
- *
- * @deprecated This function has been replaced by the \Drupal class. Use that
- *   instead.
- *
- * @return Symfony\Component\DependencyInjection\ContainerInterface|bool
- *   The instance of the ContainerInterface used to set up and maintain
- *   object instances or FALSE if none exist yet.
- */
-function drupal_container() {
-  return \Drupal::getContainer();
 }
 
 /**
@@ -2250,7 +2256,7 @@ function drupal_valid_test_ua($new_prefix = NULL) {
     // The file properties add more entropy not easily accessible to others.
     $key = drupal_get_hash_salt() . filectime(__FILE__) . fileinode(__FILE__);
     $time_diff = REQUEST_TIME - $time;
-    // We cant use Crypt::hmacBase64() yet because this can be called in very
+    // We can't use Crypt::hmacBase64() yet because this can be called in very
     // early bootstrap when autoloader has not been initialized yet.
     $test_hmac = base64_encode(hash_hmac('sha256', $check_string, $key, TRUE));
     $test_hmac = strtr($test_hmac, array('+' => '-', '/' => '_', '=' => ''));

@@ -7,6 +7,7 @@
 
 namespace Drupal\user\Entity;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
 use Drupal\Core\Entity\EntityStorageControllerInterface;
 use Drupal\user\RoleInterface;
@@ -111,6 +112,16 @@ class Role extends ConfigEntityBase implements RoleInterface {
   /**
    * {@inheritdoc}
    */
+  public static function postLoad(EntityStorageControllerInterface $storage_controller, array &$entities) {
+    parent::postLoad($storage_controller, $entities);
+    // Sort the queried roles by their weight.
+    // See \Drupal\Core\Config\Entity\ConfigEntityBase::sort().
+    uasort($entities, 'static::sort');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function preSave(EntityStorageControllerInterface $storage_controller) {
     parent::preSave($storage_controller);
 
@@ -126,10 +137,21 @@ class Role extends ConfigEntityBase implements RoleInterface {
   /**
    * {@inheritdoc}
    */
+  public function postSave(EntityStorageControllerInterface $storage_controller, $update = TRUE) {
+    parent::postSave($storage_controller, $update);
+
+    Cache::invalidateTags(array('role' => $this->id()));
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public static function postDelete(EntityStorageControllerInterface $storage_controller, array $entities) {
     parent::postDelete($storage_controller, $entities);
 
-    $storage_controller->deleteRoleReferences(array_keys($entities));
+    $ids = array_keys($entities);
+    $storage_controller->deleteRoleReferences($ids);
+    Cache::invalidateTags(array('role' => $ids));
   }
 
 }

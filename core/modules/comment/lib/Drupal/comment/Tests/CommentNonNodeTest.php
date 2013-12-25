@@ -88,8 +88,8 @@ class CommentNonNodeTest extends WebTestBase {
     $edit['comment_body[0][value]'] = $comment;
 
     $instance = $this->container->get('field.info')->getInstance('entity_test', 'entity_test', 'comment');
-    $preview_mode = $instance->getFieldSetting('preview');
-    $subject_mode = $instance->getFieldSetting('subject');
+    $preview_mode = $instance->getSetting('preview');
+    $subject_mode = $instance->getSetting('subject');
 
     // Must get the page before we test for fields.
     if ($entity !== NULL) {
@@ -229,11 +229,11 @@ class CommentNonNodeTest extends WebTestBase {
     ));
     $this->drupalLogin($limited_user);
     // Test that default field exists.
-    $this->drupalGet('admin/structure/entity-test/manage/entity_test/fields');
+    $this->drupalGet('entity_test/structure/entity_test/fields');
     $this->assertText(t('Comment settings'));
-    $this->assertLinkByHref('admin/structure/entity-test/manage/entity_test/fields/entity_test.entity_test.comment');
+    $this->assertLinkByHref('entity_test/structure/entity_test/fields/entity_test.entity_test.comment');
     // Test widget hidden option is not visible when there's no comments.
-    $this->drupalGet('admin/structure/entity-test/manage/entity_test/entity-test/fields/entity_test.entity_test.comment');
+    $this->drupalGet('entity_test/structure/entity_test/entity-test/fields/entity_test.entity_test.comment');
     $this->assertNoField('edit-default-value-input-comment-und-0-status-0');
 
     $this->drupalLogin($this->admin_user);
@@ -307,7 +307,7 @@ class CommentNonNodeTest extends WebTestBase {
     ));
     // We've changed role permissions, so need to reset render cache.
     // @todo Revisit after https://drupal.org/node/2099105
-    \Drupal::entityManager()->getViewBuilder('entity_test')->resetCache(array($this->entity->id()));
+    \Drupal::entityManager()->getViewBuilder('entity_test')->resetCache(array($this->entity));
     $this->drupalGet('entity_test/' . $this->entity->id());
     $this->assertPattern('@<h2[^>]*>Comments</h2>@', 'Comments were displayed.');
     $this->assertLink('Log in', 0, 'Link to log in was found.');
@@ -326,7 +326,7 @@ class CommentNonNodeTest extends WebTestBase {
     ));
     // We've changed role permissions, so need to reset render cache.
     // @todo Revisit after https://drupal.org/node/2099105
-    \Drupal::entityManager()->getViewBuilder('entity_test')->resetCache(array($this->entity->id()));
+    \Drupal::entityManager()->getViewBuilder('entity_test')->resetCache(array($this->entity));
     $this->drupalGet('entity_test/' . $this->entity->id());
     $this->assertNoPattern('@<h2[^>]*>Comments</h2>@', 'Comments were not displayed.');
     $this->assertFieldByName('subject', '', 'Subject field found.');
@@ -343,20 +343,20 @@ class CommentNonNodeTest extends WebTestBase {
       'administer entity_test content',
     ));
     $this->drupalLogin($limited_user);
-    $this->drupalGet('admin/structure/entity-test/manage/entity_test/fields/entity_test.entity_test.comment');
+    $this->drupalGet('entity_test/structure/entity_test/fields/entity_test.entity_test.comment');
     $this->assertNoFieldChecked('edit-default-value-input-comment-0-status-0');
     $this->assertNoFieldChecked('edit-default-value-input-comment-0-status-1');
     $this->assertFieldChecked('edit-default-value-input-comment-0-status-2');
     // Test comment option change in field settings.
     $edit = array('default_value_input[comment][0][status]' => COMMENT_CLOSED);
     $this->drupalPostForm(NULL, $edit, t('Save settings'));
-    $this->drupalGet('admin/structure/entity-test/manage/entity_test/fields/entity_test.entity_test.comment');
+    $this->drupalGet('entity_test/structure/entity_test/fields/entity_test.entity_test.comment');
     $this->assertNoFieldChecked('edit-default-value-input-comment-0-status-0');
     $this->assertFieldChecked('edit-default-value-input-comment-0-status-1');
     $this->assertNoFieldChecked('edit-default-value-input-comment-0-status-2');
 
     // Add a new comment field.
-    $this->drupalGet('admin/structure/entity-test/manage/entity_test/fields');
+    $this->drupalGet('entity_test/structure/entity_test/fields');
     $edit = array(
       'fields[_add_new_field][label]' => 'Foobar',
       'fields[_add_new_field][field_name]' => 'foobar',

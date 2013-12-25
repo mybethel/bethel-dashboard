@@ -7,7 +7,6 @@
 
 namespace Drupal\file\Plugin\views\argument;
 
-use Drupal\Component\Annotation\PluginID;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\Query\QueryFactory;
 use Drupal\views\Plugin\views\argument\Numeric;
@@ -66,7 +65,7 @@ class Fid extends Numeric implements ContainerFactoryPluginInterface {
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('plugin.manager.entity'),
+      $container->get('entity.manager'),
       $container->get('entity.query')
     );
   }

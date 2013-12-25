@@ -7,8 +7,6 @@
 
 namespace Drupal\action\Plugin\Action;
 
-use Drupal\Core\Annotation\Action;
-use Drupal\Core\Annotation\Translation;
 use Drupal\Core\Action\ConfigurableActionBase;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -148,7 +146,7 @@ class EmailAction extends ConfigurableActionBase implements ContainerFactoryPlug
   public function validateConfigurationForm(array &$form, array &$form_state) {
     if (!valid_email_address($form_state['values']['recipient']) && strpos($form_state['values']['recipient'], ':mail') === FALSE) {
       // We want the literal %author placeholder to be emphasized in the error message.
-      form_set_error('recipient', t('Enter a valid email address or use a token e-mail address such as %author.', array('%author' => '[node:author:mail]')));
+      form_set_error('recipient', $form_state, t('Enter a valid email address or use a token e-mail address such as %author.', array('%author' => '[node:author:mail]')));
     }
   }
 

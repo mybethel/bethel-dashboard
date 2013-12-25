@@ -59,6 +59,7 @@ class DisplayPageTest extends ViewUnitTestBase {
     // Setup the needed tables in order to make the drupal router working.
     $this->installSchema('system', array('router', 'menu_router', 'url_alias'));
     $this->installSchema('menu_link', 'menu_links');
+    $this->installSchema('user', 'users');
   }
 
   /**
@@ -80,11 +81,14 @@ class DisplayPageTest extends ViewUnitTestBase {
     $response = $this->container->get('http_kernel')->handle($subrequest, HttpKernelInterface::SUB_REQUEST);
     $this->assertEqual($response->getStatusCode(), 200);
 
+    $subrequest = Request::create('/test_page_display_200', 'GET');
+    \Drupal::getContainer()->set('request', $subrequest);
+
     // Test accessing a disabled page for a view.
     $view = views_get_view('test_page_display');
     // Disable the view, rebuild menu, and request the page again.
     $view->storage->disable()->save();
-    $subrequest = Request::create('/test_page_display_200', 'GET');
+
     $response = $this->container->get('http_kernel')->handle($subrequest, HttpKernelInterface::SUB_REQUEST);
     $this->assertEqual($response->getStatusCode(), 404);
   }
@@ -93,9 +97,7 @@ class DisplayPageTest extends ViewUnitTestBase {
    * Checks that the router items are properly registered
    */
   public function testPageRouterItems() {
-    $subscriber = new RouteSubscriber($this->container->get('entity.manager'), $this->container->get('state'));
-    $collection = new RouteCollection();
-    $subscriber->onDynamicRoutes(new RouteBuildEvent($collection, 'dynamic_routes'));
+    $collection = \Drupal::service('views.route_subscriber')->routes();
 
     // Check the controller defaults.
     foreach ($collection as $id => $route) {

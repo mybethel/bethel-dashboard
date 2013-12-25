@@ -1,8 +1,9 @@
 /**
  * @file
- * A Backbone View that a dynamic contextual link.
+ * A Backbone View that provides a dynamic contextual link.
  */
-(function ($, _, Backbone, Drupal) {
+
+(function ($, Backbone, Drupal) {
 
 "use strict";
 
@@ -34,7 +35,7 @@ Drupal.edit.ContextualLinkView = Backbone.View.extend({
    */
   initialize: function (options) {
     // Insert the text of the quick edit toggle.
-    this.$el.find('a').text(this.options.strings.quickEdit);
+    this.$el.find('a').text(options.strings.quickEdit);
     // Initial render.
     this.render();
     // Re-render whenever this entity's isActive attribute changes.
@@ -55,4 +56,4 @@ Drupal.edit.ContextualLinkView = Backbone.View.extend({
 
 });
 
-})(jQuery, _, Backbone, Drupal);
+})(jQuery, Backbone, Drupal);

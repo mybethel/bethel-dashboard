@@ -10,8 +10,6 @@ namespace Drupal\views\Plugin\views\style;
 use Drupal\views\Plugin\views\PluginBase;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\views\Plugin\views\wizard\WizardInterface;
-use Drupal\Component\Annotation\Plugin;
-use Drupal\Core\Annotation\Translation;
 use Drupal\views\ViewExecutable;
 
 /**
@@ -248,7 +246,8 @@ abstract class StylePluginBase extends PluginBase {
       $options += $field_labels;
       // If there are no fields, we can't group on them.
       if (count($options) > 1) {
-        // This is for backward compability, when there was just a single select form.
+        // This is for backward compatibility, when there was just a single
+        // select form.
         if (is_string($this->options['grouping'])) {
           $grouping = $this->options['grouping'];
           $this->options['grouping'] = array();
@@ -527,8 +526,8 @@ abstract class StylePluginBase extends PluginBase {
    *   @endcode
    */
   public function renderGrouping($records, $groupings = array(), $group_rendered = NULL) {
-    // This is for backward compability, when $groupings was a string containing
-    // the ID of a single field.
+    // This is for backward compatibility, when $groupings was a string
+    // containing the ID of a single field.
     if (is_string($groupings)) {
       $rendered = $group_rendered === NULL ? TRUE : $group_rendered;
       $groupings = array(array('field' => $groupings, 'rendered' => $rendered));

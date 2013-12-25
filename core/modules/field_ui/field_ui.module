@@ -7,6 +7,7 @@
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\entity\EntityViewModeInterface;
+use Drupal\field_ui\Plugin\Derivative\FieldUiLocalTask;
 
 /**
  * Implements hook_help().
@@ -61,94 +62,6 @@ function field_ui_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
-  // Create tabs for all possible bundles.
-  foreach (entity_get_info() as $entity_type => $entity_info) {
-    if ($entity_info['fieldable'] && isset($entity_info['route_base_path'])) {
-      // Extract path information from the entity type.
-      $path = $entity_info['route_base_path'];
-      $default_path = preg_replace('/{' . DRUPAL_PHP_FUNCTION_PATTERN . '}/', '%', $path);
-      // This is the position of the %field_ui_instance placeholder in the
-      // items below.
-      $field_position = count(explode('/', $path)) + 1;
-
-      $items["$path/fields"] = array(
-        'title' => 'Manage fields',
-        'type' => MENU_LOCAL_TASK,
-        'route_name' => "field_ui.overview_$entity_type",
-        'weight' => 1,
-      );
-      $items["$path/fields/%"] = array(
-        'title callback' => 'entity_page_label',
-        'title arguments' => array($field_position),
-        'route_name' => "field_ui.instance_edit_$entity_type",
-      );
-      $items["$default_path/fields/%/edit"] = array(
-        'title' => 'Edit',
-        'type' => MENU_DEFAULT_LOCAL_TASK,
-      );
-      $items["$path/fields/%/field"] = array(
-        'title' => 'Field settings',
-        'type' => MENU_LOCAL_TASK,
-        'route_name' => "field_ui.field_edit_$entity_type",
-      );
-      $items["$path/fields/%/delete"] = array(
-        'title' => 'Delete',
-        'type' => MENU_VISIBLE_IN_BREADCRUMB,
-        'route_name' => "field_ui.delete_$entity_type",
-        'weight' => 10,
-      );
-
-      // 'Manage form display' tab.
-      $items["$path/form-display"] = array(
-        'title' => 'Manage form display',
-        'type' => MENU_LOCAL_TASK,
-        'route_name' => "field_ui.form_display_overview_$entity_type",
-        'weight' => 2,
-      );
-
-      // 'Manage display' tab.
-      $items["$path/display"] = array(
-        'title' => 'Manage display',
-        'type' => MENU_LOCAL_TASK,
-        'route_name' => "field_ui.display_overview_$entity_type",
-        'weight' => 3,
-      );
-
-      // View and form modes secondary tabs.
-      // The same base $path for the menu item (with a placeholder) can be
-      // used for all bundles of a given entity type; but depending on
-      // administrator settings, each bundle has a different set of view
-      // modes available for customisation. So we define menu items for all
-      // view modes, and use a route requirement to determine which ones are
-      // actually visible for a given bundle.
-      $items["$default_path/form-display/default"] = array(
-        'title' => t('Default'),
-        'type' => MENU_DEFAULT_LOCAL_TASK,
-      );
-      $items["$default_path/display/default"] = array(
-        'title' => t('Default'),
-        'type' => MENU_DEFAULT_LOCAL_TASK,
-      );
-      $weight = 0;
-      foreach (entity_get_form_modes($entity_type) as $form_mode => $form_mode_info) {
-        $items["$path/form-display/$form_mode"] = array(
-          'title' => $form_mode_info['label'],
-          'type' => MENU_LOCAL_TASK,
-          'weight' => $weight++,
-          'route_name' => "field_ui.form_display_overview_$entity_type" . '_' . $form_mode,
-        );
-      }
-      $weight = 0;
-      foreach (entity_get_view_modes($entity_type) as $view_mode => $view_mode_info) {
-        $items["$path/display/$view_mode"] = array(
-          'title' => $view_mode_info['label'],
-          'type' => MENU_LOCAL_TASK,
-          'weight' => $weight++,
-          'route_name' => "field_ui.display_overview_$entity_type" . '_' . $view_mode,
-        );
-      }
-    }
-  }
   return $items;
 }
 
@@ -176,51 +89,6 @@ function field_ui_permission() {
   }
 
   return $permissions;
-}
-
-/**
- * Menu loader callback: Loads a field instance based on field and bundle name.
- *
- * @param $field_name
- *   The name of the field, as contained in the path.
- * @param $entity_type
- *   The name of the entity.
- * @param $bundle_name
- *   The name of the bundle, as contained in the path.
- * @param $bundle_pos
- *   The position of $bundle_name in $map.
- * @param $map
- *   The translated menu router path argument map.
- *
- * @return
- *   The field instance array.
- *
- * @ingroup field
- */
-function field_ui_instance_load($field_name, $entity_type, $bundle_name, $bundle_pos, $map) {
-  // Extract the actual bundle name from the translated argument map.
-  // The menu router path to manage fields of an entity can be shared among
-  // multiple bundles. For example:
-  // - admin/structure/types/manage/%node_type/fields/%field_ui_instance
-  // - admin/structure/types/manage/%comment_node_type/fields/%field_ui_instance
-  // The menu system will automatically load the correct bundle depending on the
-  // actual path arguments, but this menu loader function only receives the node
-  // type string as $bundle_name, which is not the bundle name for comments.
-  // We therefore leverage the dynamically translated $map provided by the menu
-  // system to retrieve the actual bundle and bundle name for the current path.
-  if ($bundle_pos > 0) {
-    $bundle = $map[$bundle_pos];
-    $bundle_name = field_extract_bundle($entity_type, $bundle);
-  }
-  // Check whether the field exists at all.
-  if ($field = field_info_field($entity_type, $field_name)) {
-    // Only return the field if a field instance exists for the given entity
-    // type and bundle.
-    if ($instance = field_info_instance($entity_type, $field_name, $bundle_name)) {
-      return $instance;
-    }
-  }
-  return FALSE;
 }
 
 /**
@@ -287,6 +155,8 @@ function field_ui_form_node_type_form_alter(&$form, $form_state) {
     $form['actions']['save_continue']['#value'] = t('Save and manage fields');
     $form['actions']['save_continue']['#weight'] = $form['actions']['save_continue']['#weight'] + 5;
     $form['actions']['save_continue']['#submit'][] = 'field_ui_form_node_type_form_submit';
+    // Hide the 'Save content type' button.
+    $form['actions']['submit']['#access'] = FALSE;
   }
 }
 
@@ -334,12 +204,7 @@ function field_ui_entity_operation_alter(array &$operations, EntityInterface $en
  */
 function field_ui_form_node_type_form_submit($form, &$form_state) {
   if ($form_state['triggering_element']['#parents'][0] === 'save_continue') {
-    $form_state['redirect_route'] = array(
-      'route_name' => 'field_ui.overview_node',
-      'route_parameters' => array(
-        'bundle' => $form_state['values']['type'],
-      ),
-    );
+    $form_state['redirect_route'] = \Drupal::entityManager()->getAdminRouteInfo('node', $form_state['values']['type']);
   }
 }
 
@@ -462,3 +327,11 @@ function theme_field_ui_table($variables) {
   return drupal_render($table);
 }
 
+/**
+ * Implements hook_local_tasks_alter().
+ */
+function field_ui_local_tasks_alter(&$local_tasks) {
+  $container = \Drupal::getContainer();
+  $local_task = FieldUiLocalTask::create($container, 'field_ui.fields');
+  $local_task->alterLocalTasks($local_tasks);
+}

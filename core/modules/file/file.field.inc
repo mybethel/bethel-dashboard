@@ -61,7 +61,7 @@ function file_field_widget_multiple_count_validate($element, &$form_state, $form
   $current = count(element_children(NestedArray::getValue($form, $parents))) - 1;
 
   $field = field_info_field($entity_type, $field_name);
-  $cardinality = $field->getFieldCardinality();
+  $cardinality = $field->getCardinality();
   $uploaded = count($values['fids']);
   $count = $uploaded + $current;
   if ($count > $cardinality) {
@@ -413,14 +413,19 @@ function theme_file_widget_multiple($variables) {
     );
   }
 
-  drupal_add_tabledrag($table_id, 'order', 'sibling', $weight_class);
-
   $build = array(
-    '#theme' => 'table',
+    '#type' => 'table',
     '#header' => $headers,
     '#rows' => $rows,
     '#attributes' => array(
       'id' => $table_id,
+    ),
+    '#tabledrag' => array(
+      array(
+        'action' => 'order',
+        'relationship' => 'sibling',
+        'group' => $weight_class,
+      ),
     ),
   );
 

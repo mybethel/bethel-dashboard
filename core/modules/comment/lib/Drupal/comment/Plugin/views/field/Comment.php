@@ -11,7 +11,6 @@ use Drupal\views\ResultRow;
 use Drupal\views\ViewExecutable;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
-use Drupal\Component\Annotation\PluginID;
 
 /**
  * Field handler to allow linking to a comment.
@@ -21,6 +20,13 @@ use Drupal\Component\Annotation\PluginID;
  * @PluginID("comment")
  */
 class Comment extends FieldPluginBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public function usesGroupBy() {
+    return FALSE;
+  }
 
   /**
    * Overrides \Drupal\views\Plugin\views\field\FieldPluginBase::init().

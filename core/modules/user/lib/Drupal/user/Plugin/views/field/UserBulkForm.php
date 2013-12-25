@@ -9,7 +9,6 @@ namespace Drupal\user\Plugin\views\field;
 
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\views\Plugin\views\field\ActionBulkForm;
-use Drupal\Component\Annotation\PluginID;
 use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -38,8 +37,8 @@ class UserBulkForm extends ActionBulkForm {
    *
    * Provide a more useful title to improve the accessibility.
    */
-  public function views_form(&$form, &$form_state) {
-    parent::views_form($form, $form_state);
+  public function viewsForm(&$form, &$form_state) {
+    parent::viewsForm($form, $form_state);
 
     if (!empty($this->view->result)) {
       foreach ($this->view->result as $row_index => $result) {
@@ -54,10 +53,10 @@ class UserBulkForm extends ActionBulkForm {
   /**
    * {@inheritdoc}
    */
-  public function views_form_validate(&$form, &$form_state) {
+  public function viewsFormValidate(&$form, &$form_state) {
     $selected = array_filter($form_state['values'][$this->options['id']]);
     if (empty($selected)) {
-      form_set_error('', t('No users selected.'));
+      form_set_error('', $form_state, t('No users selected.'));
     }
   }
 

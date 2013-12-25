@@ -7,20 +7,18 @@
 
 namespace Drupal\node\Plugin\Search;
 
-use Drupal\Core\Annotation\Translation;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Database\Query\SelectExtender;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
-use Drupal\Core\KeyValueStore\KeyValueStoreInterface;
+use Drupal\Core\KeyValueStore\StateInterface;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Plugin\PluginFormInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Access\AccessibleInterface;
 use Drupal\Core\Database\Query\Condition;
-use Drupal\search\Annotation\SearchPlugin;
 use Drupal\search\Plugin\SearchPluginBase;
 use Drupal\search\Plugin\SearchIndexingInterface;
 
@@ -68,7 +66,7 @@ class NodeSearch extends SearchPluginBase implements AccessibleInterface, Search
   /**
    * The Drupal state object used to set 'node.cron_last'.
    *
-   * @var \Drupal\Core\KeyValueStore\KeyValueStoreInterface
+   * @var \Drupal\Core\KeyValueStore\StateInterface
    */
   protected $state;
 
@@ -94,7 +92,7 @@ class NodeSearch extends SearchPluginBase implements AccessibleInterface, Search
    */
   protected $advanced = array(
     'type' => array('column' => 'n.type'),
-    'langcode' => array('column' => 'n.langcode'),
+    'langcode' => array('column' => 'i.langcode'),
     'author' => array('column' => 'n.uid'),
     'term' => array('column' => 'ti.tid', 'join' => array('table' => 'taxonomy_index', 'alias' => 'ti', 'condition' => 'n.nid = ti.nid')),
   );
@@ -108,10 +106,10 @@ class NodeSearch extends SearchPluginBase implements AccessibleInterface, Search
       $plugin_id,
       $plugin_definition,
       $container->get('database'),
-      $container->get('plugin.manager.entity'),
+      $container->get('entity.manager'),
       $container->get('module_handler'),
       $container->get('config.factory')->get('search.settings'),
-      $container->get('keyvalue')->get('state'),
+      $container->get('state'),
       $container->get('current_user')
     );
   }
@@ -133,12 +131,12 @@ class NodeSearch extends SearchPluginBase implements AccessibleInterface, Search
    *   A module manager object.
    * @param \Drupal\Core\Config\Config $search_settings
    *   A config object for 'search.settings'.
-   * @param \Drupal\Core\KeyValueStore\KeyValueStoreInterface $state
+   * @param \Drupal\Core\KeyValueStore\StateInterface $state
    *   The Drupal state object used to set 'node.cron_last'.
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The $account object to use for checking for access to advanced search.
    */
-  public function __construct(array $configuration, $plugin_id, array $plugin_definition, Connection $database, EntityManagerInterface $entity_manager, ModuleHandlerInterface $module_handler, Config $search_settings, KeyValueStoreInterface $state, AccountInterface $account = NULL) {
+  public function __construct(array $configuration, $plugin_id, array $plugin_definition, Connection $database, EntityManagerInterface $entity_manager, ModuleHandlerInterface $module_handler, Config $search_settings, StateInterface $state, AccountInterface $account = NULL) {
     $this->database = $database;
     $this->entityManager = $entity_manager;
     $this->moduleHandler = $module_handler;
@@ -176,8 +174,8 @@ class NodeSearch extends SearchPluginBase implements AccessibleInterface, Search
       ->searchExpression($keys, $this->getPluginId());
 
     // Handle advanced search filters in the f query string.
-    // $_GET['f'] is an array that looks like this in the URL:
-    // ?f[]=type:page&f[]=term:27&f[]=term:13&f[]=langcode:en
+    // \Drupal::request()->query->get('f') is an array that looks like this in
+    // the URL: ?f[]=type:page&f[]=term:27&f[]=term:13&f[]=langcode:en
     // So $parameters['f'] looks like:
     // array('type:page', 'term:27', 'term:13', 'langcode:en');
     // We need to parse this out into query conditions.
@@ -230,7 +228,7 @@ class NodeSearch extends SearchPluginBase implements AccessibleInterface, Search
 
     foreach ($find as $item) {
       // Render the node.
-      $node = $node_storage->load($item->sid);
+      $node = $node_storage->load($item->sid)->getTranslation($item->langcode);
       $build = $node_render->view($node, 'search_result', $item->langcode);
       unset($build['#theme']);
       $node->rendered = drupal_render($build);
@@ -249,7 +247,7 @@ class NodeSearch extends SearchPluginBase implements AccessibleInterface, Search
       $results[] = array(
         'link' => url($uri['path'], array_merge($uri['options'], array('absolute' => TRUE, 'language' => $language))),
         'type' => check_plain($this->entityManager->getStorageController('node_type')->load($node->bundle())->label()),
-        'title' => $node->label($item->langcode),
+        'title' => $node->label(),
         'user' => drupal_render($username),
         'date' => $node->getChangedTime(),
         'node' => $node,
@@ -291,7 +289,7 @@ class NodeSearch extends SearchPluginBase implements AccessibleInterface, Search
   public function updateIndex() {
     $limit = (int) $this->searchSettings->get('index.cron_limit');
 
-    $result = $this->database->queryRange("SELECT DISTINCT n.nid FROM {node} n LEFT JOIN {search_dataset} d ON d.type = :type AND d.sid = n.nid WHERE d.sid IS NULL OR d.reindex <> 0 ORDER BY d.reindex ASC, n.nid ASC", 0, $limit, array(':type' => $this->getPluginId()), array('target' => 'slave'));
+    $result = $this->database->queryRange("SELECT DISTINCT n.nid, d.reindex FROM {node} n LEFT JOIN {search_dataset} d ON d.type = :type AND d.sid = n.nid WHERE d.sid IS NULL OR d.reindex <> 0 ORDER BY d.reindex ASC, n.nid ASC", 0, $limit, array(':type' => $this->getPluginId()), array('target' => 'slave'));
     $nids = $result->fetchCol();
     if (!$nids) {
       return;
@@ -326,6 +324,7 @@ class NodeSearch extends SearchPluginBase implements AccessibleInterface, Search
     $node_render = $this->entityManager->getViewBuilder('node');
 
     foreach ($languages as $language) {
+      $node = $node->getTranslation($language->id);
       // Render the node.
       $build = $node_render->view($node, 'search_index', $language->id);
 
@@ -558,5 +557,4 @@ class NodeSearch extends SearchPluginBase implements AccessibleInterface, Search
       }
     }
   }
-
 }

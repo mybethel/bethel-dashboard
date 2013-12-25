@@ -162,7 +162,7 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
    */
   public function __construct($environment, ClassLoader $class_loader, $allow_dumping = TRUE) {
     $this->environment = $environment;
-    $this->booted = false;
+    $this->booted = FALSE;
     $this->classLoader = $class_loader;
     $this->allowDumping = $allow_dumping;
   }
@@ -189,7 +189,7 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
       return;
     }
     $this->booted = FALSE;
-    $this->container = null;
+    $this->container = NULL;
   }
 
   /**
@@ -274,7 +274,7 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
   /**
    * {@inheritdoc}
    */
-  public function handle(Request $request, $type = HttpKernelInterface::MASTER_REQUEST, $catch = true) {
+  public function handle(Request $request, $type = HttpKernelInterface::MASTER_REQUEST, $catch = TRUE) {
     if (FALSE === $this->booted) {
       $this->boot();
     }
@@ -369,10 +369,17 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
   protected function initializeContainer() {
     $this->containerNeedsDumping = FALSE;
     $persist = $this->getServicesToPersist();
-    // If we are rebuilding the kernel and we are in a request scope, store
-    // request info so we can add them back after the rebuild.
-    if (isset($this->container) && $this->container->hasScope('request')) {
-      $request = $this->container->get('request');
+    // The request service requires custom persisting logic, since it is also
+    // potentially scoped. During Drupal installation, there is a request
+    // service without a request scope.
+    $request_scope = FALSE;
+    if (isset($this->container)) {
+      if ($this->container->isScopeActive('request')) {
+        $request_scope = TRUE;
+      }
+      if ($this->container->initialized('request')) {
+        $request = $this->container->get('request');
+      }
     }
     $this->container = NULL;
     $class = $this->getClassName();
@@ -445,8 +452,10 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
     // Set the class loader which was registered as a synthetic service.
     $this->container->set('class_loader', $this->classLoader);
     // If we have a request set it back to the new container.
-    if (isset($request)) {
+    if ($request_scope) {
       $this->container->enterScope('request');
+    }
+    if (isset($request)) {
       $this->container->set('request', $request);
     }
     \Drupal::setContainer($this->container);
@@ -501,7 +510,7 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
       $path = DRUPAL_ROOT . '/core/lib/Drupal/' . $parent_directory;
       foreach (new \DirectoryIterator($path) as $component) {
         if (!$component->isDot() && is_dir($component->getPathname() . '/Plugin')) {
-          $namespaces['Drupal\\' . $parent_directory  .'\\' . $component->getFilename()] = DRUPAL_ROOT . '/core/lib';
+          $namespaces['Drupal\\' . $parent_directory . '\\' . $component->getFilename()] = DRUPAL_ROOT . '/core/lib';
         }
       }
     }

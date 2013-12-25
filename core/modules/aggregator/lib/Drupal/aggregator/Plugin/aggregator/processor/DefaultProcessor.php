@@ -7,11 +7,9 @@
 
 namespace Drupal\aggregator\Plugin\aggregator\processor;
 
-use Drupal\aggregator\Annotation\AggregatorProcessor;
 use Drupal\aggregator\Plugin\AggregatorPluginSettingsBase;
 use Drupal\aggregator\Plugin\ProcessorInterface;
 use Drupal\aggregator\Entity\Feed;
-use Drupal\Core\Annotation\Translation;
 use Drupal\Core\Database\Database;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -105,14 +103,6 @@ class DefaultProcessor extends AggregatorPluginSettingsBase implements Processor
       '#description' => t('Requires a correctly configured <a href="@cron">cron maintenance task</a>.', array('@cron' => url('admin/reports/status'))),
     );
 
-    $form['processors'][$info['id']]['aggregator_category_selector'] = array(
-      '#type' => 'radios',
-      '#title' => t('Select categories using'),
-      '#default_value' => $this->configuration['source']['category_selector'],
-      '#options' => array('checkboxes' => t('checkboxes'),
-      'select' => t('multiple selector')),
-      '#description' => t('For a small number of categories, checkboxes are easier to use, while a multiple selector works well with large numbers of categories.'),
-    );
     $form['processors'][$info['id']]['aggregator_teaser_length'] = array(
       '#type' => 'select',
       '#title' => t('Length of trimmed description'),
@@ -130,7 +120,6 @@ class DefaultProcessor extends AggregatorPluginSettingsBase implements Processor
     $this->configuration['items']['expire'] = $form_state['values']['aggregator_clear'];
     $this->configuration['items']['teaser_length'] = $form_state['values']['aggregator_teaser_length'];
     $this->configuration['source']['list_max'] = $form_state['values']['aggregator_summary_items'];
-    $this->configuration['source']['category_selector'] = $form_state['values']['aggregator_category_selector'];
     // @todo Refactor aggregator plugins to ConfigEntity so this is not needed.
     $this->setConfiguration($this->configuration);
   }

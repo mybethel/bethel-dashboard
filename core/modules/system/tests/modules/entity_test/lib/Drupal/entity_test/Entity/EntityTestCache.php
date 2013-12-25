@@ -7,8 +7,6 @@
 
 namespace Drupal\entity_test\Entity;
 
-use Drupal\Core\Entity\Annotation\EntityType;
-use Drupal\Core\Annotation\Translation;
 use Drupal\Core\Language\Language;
 
 /**
@@ -18,7 +16,7 @@ use Drupal\Core\Language\Language;
  *   id = "entity_test_cache",
  *   label = @Translation("Test entity with field cache"),
  *   controllers = {
- *     "storage" = "Drupal\entity_test\EntityTestStorageController",
+ *     "storage" = "Drupal\Core\Entity\FieldableDatabaseStorageController",
  *     "access" = "Drupal\entity_test\EntityTestAccessController",
  *     "form" = {
  *       "default" = "Drupal\entity_test\EntityTestFormController"

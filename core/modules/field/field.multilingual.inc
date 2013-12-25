@@ -21,18 +21,16 @@ use Drupal\field\FieldInterface;
  * @endcode
  * Every field can hold a single or multiple value for each language code
  * belonging to the available language codes set:
- * - For untranslatable fields this set only contains Language::LANGCODE_NOT_SPECIFIED.
+ * - For untranslatable fields this set is only Language::LANGCODE_DEFAULT.
  * - For translatable fields this set can contain any language code. By default
  *   it is the list returned by field_content_languages(), which contains all
- *   installed languages with the addition of Language::LANGCODE_NOT_SPECIFIED. This
- *   default can be altered by modules implementing
+ *   installed languages with the addition of Language::LANGCODE_NOT_SPECIFIED.
+ *   This default can be altered by modules implementing
  *   hook_field_available_languages_alter().
  *
  * The available language codes for a particular field are returned by
  * field_available_languages(). Whether a field is translatable is determined by
- * calling field_is_translatable(), which checks the $field['translatable']
- * property returned by field_info_field() and whether the entity type the field
- * is attached to supports translation.
+ * calling $field_definition->isTranslatable().
  *
  * By default, field_invoke_method() processes a field in all available
  * languages, unless it is given a language code suggestion. Based on that
@@ -69,10 +67,10 @@ use Drupal\field\FieldInterface;
  * Collects the available language codes for the given entity type and field.
  *
  * If the given field has language support enabled, an array of available
- * language codes will be returned, otherwise only Language::LANGCODE_NOT_SPECIFIED will
- * be returned. Since the default value for a 'translatable' entity property is
- * FALSE, we ensure that only entities that are able to handle translations
- * actually get translatable fields.
+ * language codes will be returned, otherwise only Language::LANGCODE_DEFAULT
+ * will be returned. Since the default value for a 'translatable' entity
+ * property is FALSE, we ensure that only entities that are able to handle
+ * translations actually get translatable fields.
  *
  * @param $entity_type
  *   The type of the entity the field is attached to, e.g. 'node' or 'user'.
@@ -88,12 +86,12 @@ function field_available_languages($entity_type, FieldInterface $field) {
     $drupal_static_fast['field_langcodes'] = &drupal_static(__FUNCTION__);
   }
   $field_langcodes = &$drupal_static_fast['field_langcodes'];
-  $field_name = $field->getFieldName();
+  $field_name = $field->getName();
 
   if (!isset($field_langcodes[$entity_type][$field_name])) {
     // If the field has language support enabled we retrieve an (alterable) list
-    // of enabled languages, otherwise we return just Language::LANGCODE_NOT_SPECIFIED.
-    if (field_is_translatable($entity_type, $field)) {
+    // of enabled languages, otherwise we return Language::LANGCODE_DEFAULT.
+    if ($field->isTranslatable()) {
       $langcodes = field_content_languages();
       // Let other modules alter the available languages.
       $context = array('entity_type' => $entity_type, 'field' => $field);
@@ -101,7 +99,7 @@ function field_available_languages($entity_type, FieldInterface $field) {
       $field_langcodes[$entity_type][$field_name] = $langcodes;
     }
     else {
-      $field_langcodes[$entity_type][$field_name] = array(Language::LANGCODE_NOT_SPECIFIED);
+      $field_langcodes[$entity_type][$field_name] = array(Language::LANGCODE_DEFAULT);
     }
   }
 
@@ -150,24 +148,6 @@ function _field_language_suggestion($available_langcodes, $langcode_suggestion, 
  */
 function field_content_languages() {
   return array_keys(language_list(Language::STATE_ALL));
-}
-
-/**
- * Checks whether a field has language support.
- *
- * A field has language support enabled if its 'translatable' property is set to
- * TRUE, and its entity type has at least one translation handler registered.
- *
- * @param $entity_type
- *   The type of the entity the field is attached to.
- * @param $field
- *   A field data structure.
- *
- * @return
- *   TRUE if the field can be translated.
- */
-function field_is_translatable($entity_type, FieldInterface $field) {
-  return $field->isFieldTranslatable() && field_has_translation_handler($entity_type);
 }
 
 /**

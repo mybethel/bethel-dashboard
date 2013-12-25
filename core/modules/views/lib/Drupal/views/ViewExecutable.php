@@ -7,6 +7,7 @@
 
 namespace Drupal\views;
 
+use Drupal\Core\Session\AccountInterface;
 use Drupal\views\Plugin\views\query\QueryPluginBase;
 use Drupal\views\ViewStorageInterface;
 use Drupal\Component\Utility\Tags;
@@ -178,7 +179,7 @@ class ViewExecutable {
   /**
    * Where the $query object will reside.
    *
-   * @var \Drupal\views\Plugin\query\QueryInterface
+   * @var \Drupal\views\Plugin\views\query\QueryPluginBase
    */
   public $query = NULL;
 
@@ -407,6 +408,13 @@ class ViewExecutable {
   );
 
   /**
+   * The current user.
+   *
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected $user;
+
+  /**
    * Should the admin links be shown on the rendered view.
    *
    * @var bool
@@ -418,11 +426,14 @@ class ViewExecutable {
    *
    * @param \Drupal\views\ViewStorageInterface $storage
    *   The view config entity the actual information is stored on.
+   * @param \Drupal\Core\Session\AccountInterface $user
+   *   The current user.
    */
-  public function __construct(ViewStorageInterface $storage) {
+  public function __construct(ViewStorageInterface $storage, AccountInterface $user) {
     // Reference the storage and the executable to each other.
     $this->storage = $storage;
     $this->storage->set('executable', $this);
+    $this->user = $user;
 
     // Add the default css for a view.
     $this->element['#attached']['library'][] = array('views', 'views.module');
@@ -556,7 +567,7 @@ class ViewExecutable {
 
   /**
    * Set the exposed filters input to an array. If unset they will be taken
-   * from $_GET when the time comes.
+   * from \Drupal::request()->query when the time comes.
    */
   public function setExposedInput($filters) {
     $this->exposed_input = $filters;
@@ -566,8 +577,8 @@ class ViewExecutable {
    * Figure out what the exposed input for this view is.
    */
   public function getExposedInput() {
-    // Fill our input either from $_GET or from something previously set on the
-    // view.
+    // Fill our input either from \Drupal::request()->query or from something
+    // previously set on the view.
     if (empty($this->exposed_input)) {
       $this->exposed_input = \Drupal::request()->query->all();
       // unset items that are definitely not our input:
@@ -627,7 +638,7 @@ class ViewExecutable {
     $this->initDisplay();
 
     foreach ($displays as $display_id) {
-      if ($this->displayHandlers->get($display_id)->access()) {
+      if ($this->displayHandlers->get($display_id)->access($this->user)) {
         return $display_id;
       }
     }
@@ -883,7 +894,7 @@ class ViewExecutable {
 
     // Run through and test for accessibility.
     foreach ($handlers as $id => $handler) {
-      if (!$handler->access()) {
+      if (!$handler->access($this->user)) {
         unset($handlers[$id]);
       }
     }
@@ -901,15 +912,11 @@ class ViewExecutable {
 
     // build arguments.
     $position = -1;
-
-    // Create a title for use in the breadcrumb trail.
-    $title = $this->display_handler->getOption('title');
-
-    $this->build_info['breadcrumb'] = array();
-    $breadcrumb_args = array();
     $substitutions = array();
-
     $status = TRUE;
+
+    // Get the title.
+    $title = $this->display_handler->getOption('title');
 
     // Iterate through each argument and process.
     foreach ($this->argument as $id => $arg) {
@@ -954,30 +961,10 @@ class ViewExecutable {
         $substitutions['%' . ($position + 1)] = $arg_title;
         $substitutions['!' . ($position + 1)] = strip_tags(decode_entities($arg));
 
-        // Since we're really generating the breadcrumb for the item above us,
-        // check the default action of this argument.
-        if ($this->display_handler->usesBreadcrumb() && $argument->usesBreadcrumb()) {
-          $path = $this->getUrl($breadcrumb_args);
-          if (strpos($path, '%') === FALSE) {
-            if (!empty($argument->options['breadcrumb_enable']) && !empty($argument->options['breadcrumb'])) {
-              $breadcrumb = $argument->options['breadcrumb'];
-            }
-            else {
-              $breadcrumb = $title;
-            }
-            $this->build_info['breadcrumb'][$path] = str_replace(array_keys($substitutions), $substitutions, $breadcrumb);
-          }
-        }
-
-        // Allow the argument to muck with this breadcrumb.
-        $argument->setBreadcrumb($this->build_info['breadcrumb']);
-
         // Test to see if we should use this argument's title
         if (!empty($argument->options['title_enable']) && !empty($argument->options['title'])) {
           $title = $argument->options['title'];
         }
-
-        $breadcrumb_args[] = $arg;
       }
       else {
         // determine default condition and handle.
@@ -1081,9 +1068,9 @@ class ViewExecutable {
     if ($this->display_handler->usesExposed()) {
       $exposed_form = $this->display_handler->getPlugin('exposed_form');
       $this->exposed_widgets = $exposed_form->renderExposedForm();
-      if (form_set_error() || !empty($this->build_info['abort'])) {
+      if (\Drupal::formBuilder()->getAnyErrors() || !empty($this->build_info['abort'])) {
         $this->built = TRUE;
-        // Don't execute the query, but rendering will still be executed to display the empty text.
+        // Don't execute the query, $form_state, but rendering will still be executed to display the empty text.
         $this->executed = TRUE;
         return empty($this->build_info['fail']);
       }
@@ -1302,8 +1289,6 @@ class ViewExecutable {
       return;
     }
 
-    drupal_theme_initialize();
-
     $exposed_form = $this->display_handler->getPlugin('exposed_form');
     $exposed_form->preRender($this->result);
 
@@ -1365,11 +1350,13 @@ class ViewExecutable {
       $module_handler->invokeAll('views_pre_render', array($this));
 
       // Let the themes play too, because pre render is a very themey thing.
-      foreach ($GLOBALS['base_theme_info'] as $base) {
-        $module_handler->invoke($base, 'views_pre_render', array($this));
-      }
+      if (isset($GLOBALS['base_theme_info']) && isset($GLOBALS['theme'])) {
+        foreach ($GLOBALS['base_theme_info'] as $base) {
+          $module_handler->invoke($base, 'views_pre_render', array($this));
+        }
 
-      $module_handler->invoke($GLOBALS['theme'], 'views_pre_render', array($this));
+        $module_handler->invoke($GLOBALS['theme'], 'views_pre_render', array($this));
+      }
 
       $this->display_handler->output = $this->display_handler->render();
       if ($cache) {
@@ -1387,11 +1374,13 @@ class ViewExecutable {
     $module_handler->invokeAll('views_post_render', array($this, &$this->display_handler->output, $cache));
 
     // Let the themes play too, because post render is a very themey thing.
-    foreach ($GLOBALS['base_theme_info'] as $base) {
-      $module_handler->invoke($base, 'views_post_render', array($this));
-    }
+    if (isset($GLOBALS['base_theme_info']) && isset($GLOBALS['theme'])) {
+      foreach ($GLOBALS['base_theme_info'] as $base) {
+        $module_handler->invoke($base, 'views_post_render', array($this));
+      }
 
-    $module_handler->invoke($GLOBALS['theme'], 'views_post_render', array($this));
+      $module_handler->invoke($GLOBALS['theme'], 'views_post_render', array($this));
+    }
 
     return $this->display_handler->output;
   }
@@ -1404,7 +1393,7 @@ class ViewExecutable {
    * This function should NOT be used by anything external as this
    * returns data in the format specified by the display. It can also
    * have other side effects that are only intended for the 'proper'
-   * use of the display, such as setting page titles and breadcrumbs.
+   * use of the display, such as setting page titles.
    *
    * If you simply want to view the display, use View::preview() instead.
    */
@@ -1507,7 +1496,7 @@ class ViewExecutable {
     // Find out which other displays attach to the current one.
     foreach ($this->display_handler->getAttachedDisplays() as $id) {
       // Create a clone for the attachments to manipulate. 'static' refers to the current class name.
-      $cloned_view = new static($this->storage);
+      $cloned_view = new static($this->storage, $this->user);
       $this->displayHandlers->get($id)->attachTo($cloned_view, $this->current_display);
     }
     $this->is_attachment = FALSE;
@@ -1540,7 +1529,7 @@ class ViewExecutable {
    * this sets the display handler if it hasn't been.
    */
   public function access($displays = NULL, $account = NULL) {
-    // Noone should have access to disabled views.
+    // No one should have access to disabled views.
     if (!$this->storage->status()) {
       return FALSE;
     }
@@ -1550,7 +1539,7 @@ class ViewExecutable {
     }
 
     if (!$account) {
-      $account = \Drupal::currentUser();
+      $account = $this->user;
     }
 
     // We can't use choose_display() here because that function
@@ -1724,37 +1713,15 @@ class ViewExecutable {
   }
 
   /**
-   * Get the breadcrumb used for this view.
+   * Gets the current user.
    *
-   * @param $set
-   *   If true, use drupal_set_breadcrumb() to install the breadcrumb.
+   * Views plugins can recieve the current user in order to not need dependency
+   * injection.
+   *
+   * @return \Drupal\Core\Session\AccountInterface
    */
-  public function getBreadcrumb($set = FALSE) {
-    // Now that we've built the view, extract the breadcrumb.
-    $base = TRUE;
-    $breadcrumb = array();
-
-    if (!empty($this->build_info['breadcrumb'])) {
-      foreach ($this->build_info['breadcrumb'] as $path => $title) {
-        // Check to see if the frontpage is in the breadcrumb trail; if it
-        // is, we'll remove that from the actual breadcrumb later.
-        if ($path == \Drupal::config('system.site')->get('page.front')) {
-          $base = FALSE;
-          $title = t('Home');
-        }
-        if ($title) {
-          $breadcrumb[] = l($title, $path, array('html' => TRUE));
-        }
-      }
-
-      if ($set) {
-        if ($base && $current_breadcrumbs = drupal_set_breadcrumb()) {
-          $breadcrumb = array_merge($current_breadcrumbs, $breadcrumb);
-        }
-        drupal_set_breadcrumb($breadcrumb);
-      }
-    }
-    return $breadcrumb;
+  public function getUser() {
+    return $this->user;
   }
 
   /**
@@ -1786,9 +1753,10 @@ class ViewExecutable {
 
     $reflection = new \ReflectionClass($this);
     $defaults = $reflection->getDefaultProperties();
-    // The storage should not be reset. This is not generated by the execution
-    // of a view.
+    // The external dependencies should not be reset. This is not generated by
+    // the execution of a view.
     unset($defaults['storage']);
+    unset($defaults['user']);
     foreach ($defaults as $property => $default) {
       $this->{$property} = $default;
     }

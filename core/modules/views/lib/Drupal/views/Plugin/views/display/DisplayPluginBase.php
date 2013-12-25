@@ -9,11 +9,13 @@ namespace Drupal\views\Plugin\views\display;
 
 use Drupal\Component\Utility\String;
 use Drupal\Core\Language\Language;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Theme\Registry;
 use Drupal\views\Plugin\views\area\AreaPluginBase;
 use Drupal\views\ViewExecutable;
 use Drupal\views\Plugin\views\PluginBase;
 use Drupal\views\Views;
+use Symfony\Component\DependencyInjection\Exception\RuntimeException as DependencyInjectionRuntimeException;
 
 /**
  * @defgroup views_display_plugins Views display plugins
@@ -102,6 +104,13 @@ abstract class DisplayPluginBase extends PluginBase {
   protected $usesAreas = TRUE;
 
   /**
+   * Static cache for unpackOptions, but not if we are in the UI.
+   *
+   * @var array
+   */
+  protected static $unpackOptions = array();
+
+  /**
    * Constructs a new DisplayPluginBase object.
    *
    * Because DisplayPluginBase::initDisplay() takes the display configuration by
@@ -123,12 +132,10 @@ abstract class DisplayPluginBase extends PluginBase {
 
     // Load extenders as soon as possible.
     $this->extender = array();
-    $extenders = views_get_enabled_display_extenders();
-    if (!empty($extenders)) {
+    if ($extenders = Views::getEnabledDisplayExtenders()) {
       $manager = Views::pluginManager('display_extender');
       foreach ($extenders as $extender) {
-        $plugin = $manager->createInstance($extender);
-        if ($plugin) {
+        if ($plugin = $manager->createInstance($extender)) {
           $plugin->init($this->view, $this);
           $this->extender[$extender] = $plugin;
         }
@@ -147,23 +154,23 @@ abstract class DisplayPluginBase extends PluginBase {
       unset($options['defaults']);
     }
 
-    // Cache for unpackOptions, but not if we are in the ui.
-    static $unpack_options = array();
-    if (empty($view->editing)) {
-      $cid = 'unpackOptions:' . hash('sha256', serialize(array($this->options, $options)));
-      if (empty($unpack_options[$cid])) {
-        $cache = views_cache_get($cid, TRUE);
+    $skip_cache = \Drupal::config('views.settings')->get('skip_cache');
+
+    if (empty($view->editing) || !$skip_cache) {
+      $cid = 'unpackOptions:' . hash('sha256', serialize(array($this->options, $options))) . ':' . \Drupal::languageManager()->getLanguage()->id;
+      if (empty(static::$unpackOptions[$cid])) {
+        $cache = \Drupal::cache('views_info')->get($cid);
         if (!empty($cache->data)) {
           $this->options = $cache->data;
         }
         else {
           $this->unpackOptions($this->options, $options);
-          views_cache_set($cid, $this->options, TRUE);
+          \Drupal::cache('views_info')->set($cid, $this->options);
         }
-        $unpack_options[$cid] = $this->options;
+        static::$unpackOptions[$cid] = $this->options;
       }
       else {
-        $this->options = $unpack_options[$cid];
+        $this->options = static::$unpackOptions[$cid];
       }
     }
     else {
@@ -218,7 +225,7 @@ abstract class DisplayPluginBase extends PluginBase {
   public function usesExposed() {
     if (!isset($this->has_exposed)) {
       foreach ($this->handlers as $type => $value) {
-        foreach ($this->view->$type as $id => $handler) {
+        foreach ($this->view->$type as $handler) {
           if ($handler->canExpose() && $handler->isExposed()) {
             // one is all we need; if we find it, return true.
             $this->has_exposed = TRUE;
@@ -367,7 +374,7 @@ abstract class DisplayPluginBase extends PluginBase {
     }
 
     if (!empty($this->view->argument) && $this->getOption('hide_attachment_summary')) {
-      foreach ($this->view->argument as $argument_id => $argument) {
+      foreach ($this->view->argument as $argument) {
         if ($argument->needsStylePlugin() && empty($argument->argument_validated)) {
           return FALSE;
         }
@@ -484,7 +491,7 @@ abstract class DisplayPluginBase extends PluginBase {
           'exposed_form' => TRUE,
 
           'link_display' => TRUE,
-          'link_url' => '',
+          'link_url' => TRUE,
           'group_by' => TRUE,
 
           'style' => TRUE,
@@ -540,7 +547,7 @@ abstract class DisplayPluginBase extends PluginBase {
         'bool' => TRUE,
       ),
       'use_more_always' => array(
-        'default' => FALSE,
+        'default' => TRUE,
         'bool' => TRUE,
       ),
       'use_more_text' => array(
@@ -777,13 +784,6 @@ abstract class DisplayPluginBase extends PluginBase {
   }
 
   /**
-   * Check to see if the display needs a breadcrumb
-   *
-   * By default, displays do not need breadcrumbs
-   */
-  public function usesBreadcrumb() { return FALSE; }
-
-  /**
    * Determine if a given option is set to use the default display or the
    * current display
    *
@@ -875,6 +875,8 @@ abstract class DisplayPluginBase extends PluginBase {
 
   /**
    * Get a full array of handlers for $type. This caches them.
+   *
+   * @return \Drupal\views\Plugin\views\HandlerBase[]
    */
   public function getHandlers($type) {
     if (!isset($this->handlers[$type])) {
@@ -886,8 +888,15 @@ abstract class DisplayPluginBase extends PluginBase {
         // If this is during form submission and there are temporary options
         // which can only appear if the view is in the edit cache, use those
         // options instead. This is used for AJAX multi-step stuff.
-        if (\Drupal::request()->request->get('form_id') && isset($this->view->temporary_options[$type][$id])) {
-          $info = $this->view->temporary_options[$type][$id];
+        // @todo Remove dependency on Request object
+        //   https://drupal.org/node/2059003.
+        try {
+          $request = \Drupal::request();
+          if ($request->request->get('form_id') && isset($this->view->temporary_options[$type][$id])) {
+            $info = $this->view->temporary_options[$type][$id];
+          }
+        }
+        catch (DependencyInjectionRuntimeException $e) {
         }
 
         if ($info['id'] != $id) {
@@ -1024,17 +1033,17 @@ abstract class DisplayPluginBase extends PluginBase {
     if (!empty($this->view->build_info['substitutions'])) {
       $tokens = $this->view->build_info['substitutions'];
     }
-    $count = 0;
-    foreach ($this->view->display_handler->getHandlers('argument') as $arg => $handler) {
-      $token = '%' . ++$count;
-      if (!isset($tokens[$token])) {
-        $tokens[$token] = '';
-      }
 
-      // Use strip tags as there should never be HTML in the path.
-      // However, we need to preserve special characters like " that
-      // were removed by check_plain().
-      $tokens['!' . $count] = isset($this->view->args[$count - 1]) ? strip_tags(decode_entities($this->view->args[$count - 1])) : '';
+    // Add tokens for every argument (contextual filter) and path arg.
+    $handlers = count($this->view->display_handler->getHandlers('argument'));
+    for ($count = 1; $count <= $handlers; $count++) {
+      if (!isset($tokens["%$count"])) {
+        $tokens["%$count"] = '';
+      }
+       // Use strip tags as there should never be HTML in the path.
+       // However, we need to preserve special characters like " that
+       // were removed by check_plain().
+      $tokens["!$count"] = isset($this->view->args[$count - 1]) ? strip_tags(decode_entities($this->view->args[$count - 1])) : '';
     }
 
     return $tokens;
@@ -1122,8 +1131,6 @@ abstract class DisplayPluginBase extends PluginBase {
     $style_plugin_instance = $this->getPlugin('style');
     $style_summary = empty($style_plugin_instance->definition['title']) ? t('Missing style plugin') : $style_plugin_instance->summaryTitle();
     $style_title = empty($style_plugin_instance->definition['title']) ? t('Missing style plugin') : $style_plugin_instance->pluginTitle();
-
-    $style = '';
 
     $options['style'] = array(
       'category' => 'format',
@@ -1291,10 +1298,20 @@ abstract class DisplayPluginBase extends PluginBase {
     }
 
     if ($this->usesLinkDisplay()) {
-      $display_id = $this->getLinkDisplay();
-      $displays = $this->view->storage->get('display');
-      $link_display = empty($displays[$display_id]) ? t('None') : check_plain($displays[$display_id]['display_title']);
-      $link_display = $this->getOption('link_display') == 'custom_url' ? t('Custom URL') : $link_display;
+      $link_display_option = $this->getOption('link_display');
+      $link_display = $this->t('None');
+
+      if ($link_display_option == 'custom_url') {
+        $link_display = $this->t('Custom URL');
+      }
+      elseif (!empty($link_display_option)) {
+        $display_id = $this->getLinkDisplay();
+        $displays = $this->view->storage->get('display');
+        if (!empty($displays[$display_id])) {
+          $link_display = String::checkPlain($displays[$display_id]['display_title']);
+        }
+      }
+
       $options['link_display'] = array(
         'category' => 'pager',
         'title' => t('Link display'),
@@ -1458,7 +1475,7 @@ abstract class DisplayPluginBase extends PluginBase {
         $form['use_more'] = array(
           '#type' => 'checkbox',
           '#title' => t('Create more link'),
-          '#description' => t("This will add a more link to the bottom of this view, which will link to the page view. If you have more than one page view, the link will point to the display specified in 'Link display' section under advanced. You can override the url at the link display setting."),
+          '#description' => t("This will add a more link to the bottom of this view, which will link to the page view. If you have more than one page view, the link will point to the display specified in 'Link display' section under pager. You can override the url at the link display setting."),
           '#default_value' => $this->getOption('use_more'),
         );
         $form['use_more_always'] = array(
@@ -1628,7 +1645,12 @@ abstract class DisplayPluginBase extends PluginBase {
       case 'style':
         $form['#title'] .= t('How should this view be styled');
         $style_plugin = $this->getPlugin('style');
-        $form['style'] =  array(
+        $form['style'] = array(
+          '#prefix' => '<div class="clearfix">',
+          '#suffix' => '</div>',
+          '#tree' => TRUE,
+        );
+        $form['style']['type'] = array(
           '#title' => t('Style'),
           '#title_display' => 'invisible',
           '#type' => 'radios',
@@ -1672,7 +1694,12 @@ abstract class DisplayPluginBase extends PluginBase {
       case 'row':
         $form['#title'] .= t('How should each row in this view be styled');
         $row_plugin_instance = $this->getPlugin('row');
-        $form['row'] =  array(
+        $form['row'] = array(
+          '#prefix' => '<div class="clearfix">',
+          '#suffix' => '</div>',
+          '#tree' => TRUE,
+        );
+        $form['row']['type'] = array(
           '#title' => t('Row'),
           '#title_display' => 'invisible',
           '#type' => 'radios',
@@ -1691,25 +1718,24 @@ abstract class DisplayPluginBase extends PluginBase {
         break;
       case 'link_display':
         $form['#title'] .= t('Which display to use for path');
+        $options = array(FALSE => $this->t('None'), 'custom_url' => $this->t('Custom URL'));
+
         foreach ($this->view->storage->get('display') as $display_id => $display) {
           if ($this->view->displayHandlers->get($display_id)->hasPath()) {
             $options[$display_id] = $display['display_title'];
           }
         }
-        $options['custom_url'] = t('Custom URL');
-        if (count($options)) {
-          $form['link_display'] = array(
-            '#title' => t('Custom URL'),
-            '#type' => 'radios',
-            '#options' => $options,
-            '#description' => t("Which display to use to get this display's path for things like summary links, rss feed links, more links, etc."),
-            '#default_value' => $this->getOption('link_display'),
-          );
-        }
+
+        $form['link_display'] = array(
+          '#type' => 'radios',
+          '#options' => $options,
+          '#description' => t("Which display to use to get this display's path for things like summary links, rss feed links, more links, etc."),
+          '#default_value' => $this->getOption('link_display'),
+        );
 
         $options = array();
         $count = 0; // This lets us prepare the key as we want it printed.
-        foreach ($this->view->display_handler->getHandlers('argument') as $arg => $handler) {
+        foreach ($this->view->display_handler->getHandlers('argument') as $handler) {
           $options[t('Arguments')]['%' . ++$count] = t('@argument title', array('@argument' => $handler->adminLabel()));
           $options[t('Arguments')]['!' . $count] = t('@argument input', array('@argument' => $handler->adminLabel()));
         }
@@ -2067,7 +2093,6 @@ abstract class DisplayPluginBase extends PluginBase {
     $registry = $this->theme_registry;
     $extension = $this->theme_extension;
 
-    $output = '';
     $picked = FALSE;
     foreach ($themes as $theme) {
       $template = strtr($theme, '_', '-') . $extension;
@@ -2098,24 +2123,24 @@ abstract class DisplayPluginBase extends PluginBase {
     switch ($form_state['section']) {
       case 'display_title':
         if (empty($form_state['values']['display_title'])) {
-          form_error($form['display_title'], t('Display title may not be empty.'));
+          form_error($form['display_title'], $form_state, t('Display title may not be empty.'));
         }
         break;
       case 'css_class':
         $css_class = $form_state['values']['css_class'];
         if (preg_match('/[^a-zA-Z0-9-_ ]/', $css_class)) {
-          form_error($form['css_class'], t('CSS classes must be alphanumeric or dashes only.'));
+          form_error($form['css_class'], $form_state, t('CSS classes must be alphanumeric or dashes only.'));
         }
       break;
       case 'display_id':
         if ($form_state['values']['display_id']) {
           if (preg_match('/[^a-z0-9_]/', $form_state['values']['display_id'])) {
-            form_error($form['display_id'], t('Display name must be letters, numbers, or underscores only.'));
+            form_error($form['display_id'], $form_state, t('Display name must be letters, numbers, or underscores only.'));
           }
 
           foreach ($this->view->display as $id => $display) {
             if ($id != $this->view->current_display && ($form_state['values']['display_id'] == $id || (isset($display->new_id) && $form_state['values']['display_id'] == $display->new_id))) {
-              form_error($form['display_id'], t('Display id should be unique.'));
+              form_error($form['display_id'], $form_state, t('Display id should be unique.'));
             }
           }
         }
@@ -2164,52 +2189,6 @@ abstract class DisplayPluginBase extends PluginBase {
         $this->display['display_title'] = $form_state['values']['display_title'];
         $this->setOption('display_description', $form_state['values']['display_description']);
         break;
-      case 'access':
-        $access = $this->getOption('access');
-        if ($access['type'] != $form_state['values']['access']['type']) {
-          $plugin = Views::pluginManager('access')->createInstance($form_state['values']['access']['type']);
-          if ($plugin) {
-            $access = array('type' => $form_state['values']['access']['type']);
-            $this->setOption('access', $access);
-            if ($plugin->usesOptions()) {
-              $form_state['view']->addFormToStack('display', $this->display['id'], 'access_options');
-            }
-          }
-        }
-
-        break;
-      case 'access_options':
-        $plugin = $this->getPlugin('access');
-        if ($plugin) {
-          $access = $this->getOption('access');
-          $plugin->submitOptionsForm($form['access_options'], $form_state);
-          $access['options'] = $form_state['values'][$section];
-          $this->setOption('access', $access);
-        }
-        break;
-      case 'cache':
-        $cache = $this->getOption('cache');
-        if ($cache['type'] != $form_state['values']['cache']['type']) {
-          $plugin = Views::pluginManager('cache')->createInstance($form_state['values']['cache']['type']);
-          if ($plugin) {
-            $cache = array('type' => $form_state['values']['cache']['type']);
-            $this->setOption('cache', $cache);
-            if ($plugin->usesOptions()) {
-              $form_state['view']->addFormToStack('display', $this->display['id'], 'cache_options');
-            }
-          }
-        }
-
-        break;
-      case 'cache_options':
-        $plugin = $this->getPlugin('cache');
-        if ($plugin) {
-          $cache = $this->getOption('cache');
-          $plugin->submitOptionsForm($form['cache_options'], $form_state);
-          $cache['options'] = $form_state['values'][$section];
-          $this->setOption('cache', $cache);
-        }
-        break;
       case 'query':
         $plugin = $this->getPlugin('query');
         if ($plugin) {
@@ -2223,6 +2202,8 @@ abstract class DisplayPluginBase extends PluginBase {
       case 'title':
       case 'css_class':
       case 'display_comment':
+      case 'distinct':
+      case 'group_by':
         $this->setOption($section, $form_state['values'][$section]);
         break;
       case 'field_language':
@@ -2232,120 +2213,50 @@ abstract class DisplayPluginBase extends PluginBase {
       case 'use_ajax':
       case 'hide_attachment_summary':
       case 'show_admin_links':
+      case 'exposed_block':
         $this->setOption($section, (bool) $form_state['values'][$section]);
         break;
       case 'use_more':
         $this->setOption($section, intval($form_state['values'][$section]));
         $this->setOption('use_more_always', intval($form_state['values']['use_more_always']));
         $this->setOption('use_more_text', $form_state['values']['use_more_text']);
-      case 'distinct':
-        $this->setOption($section, $form_state['values'][$section]);
         break;
-      case 'group_by':
-        $this->setOption($section, $form_state['values'][$section]);
-        break;
-      case 'row':
-        // This if prevents resetting options to default if they don't change
-        // the plugin.
-        $row = $this->getOption('row');
-        if ($row['type'] != $form_state['values'][$section]) {
-          $plugin = Views::pluginManager('row')->createInstance($form_state['values'][$section]);
-          if ($plugin) {
-            $row = array('type' => $form_state['values'][$section]);
-            $this->setOption($section, $row);
 
-            // send ajax form to options page if we use it.
-            if ($plugin->usesOptions()) {
-              $form_state['view']->addFormToStack('display', $this->display['id'], 'row_options');
-            }
-          }
-        }
-        break;
-      case 'style':
-        // This if prevents resetting options to default if they don't change
-        // the plugin.
-        $style = $this->getOption('style');
-        if ($style['type'] != $form_state['values'][$section]) {
-          $plugin = views::pluginManager('style')->createInstance($form_state['values'][$section]);
-          if ($plugin) {
-            $row = array('type' => $form_state['values'][$section]);
-            $this->setOption($section, $row);
-            // send ajax form to options page if we use it.
-            if ($plugin->usesOptions()) {
-              $form_state['view']->addFormToStack('display', $this->display['id'], 'style_options');
-            }
-          }
-        }
-        break;
-      case 'style_options':
-        $plugin = $this->getPlugin('style');
-        if ($plugin) {
-          $style = $this->getOption('style');
-          $plugin->submitOptionsForm($form['style_options'], $form_state);
-          $style['options'] = $form_state['values'][$section];
-          $this->setOption('style', $style);
-        }
-        break;
-      case 'row_options':
-        $plugin = $this->getPlugin('row');
-        if ($plugin) {
-          $row = $this->getOption('row');
-          $plugin->submitOptionsForm($form['row_options'], $form_state);
-          $row['options'] = $form_state['values'][$section];
-          $this->setOption('row', $row);
-        }
-        break;
-      case 'exposed_block':
-        $this->setOption($section, (bool) $form_state['values'][$section]);
-        break;
+      case 'access':
+      case 'cache':
       case 'exposed_form':
-        $exposed_form = $this->getOption('exposed_form');
-        if ($exposed_form['type'] != $form_state['values']['exposed_form']['type']) {
-          $plugin = Views::pluginManager('exposed_form')->createInstance($form_state['values']['exposed_form']['type']);
-          if ($plugin) {
-            $exposed_form = array('type' => $form_state['values']['exposed_form']['type'], 'options' => array());
-            $this->setOption('exposed_form', $exposed_form);
-            if ($plugin->usesOptions()) {
-              $form_state['view']->addFormToStack('display', $this->display['id'], 'exposed_form_options');
-            }
-          }
-        }
-
-        break;
-      case 'exposed_form_options':
-        $plugin = $this->getPlugin('exposed_form');
-        if ($plugin) {
-          $exposed_form = $this->getOption('exposed_form');
-          $plugin->submitOptionsForm($form['exposed_form_options'], $form_state);
-          $exposed_form['options'] = $form_state['values'][$section];
-          $this->setOption('exposed_form', $exposed_form);
-        }
-        break;
       case 'pager':
-        $pager = $this->getOption('pager');
-        if ($pager['type'] != $form_state['values']['pager']['type']) {
-          $plugin = Views::pluginManager('pager')->createInstance($form_state['values']['pager']['type']);
+      case 'row':
+      case 'style':
+        $plugin_type = $section;
+        $plugin_options = $this->getOption($plugin_type);
+        if ($plugin_options['type'] != $form_state['values'][$plugin_type]['type']) {
+          $plugin = Views::pluginManager($plugin_type)->createInstance($form_state['values'][$plugin_type]['type']);
           if ($plugin) {
-            // Because pagers have very similar options, let's allow pagers to
-            // try to carry the options over.
-            $plugin->init($this->view, $this, $pager['options']);
-
-            $pager = array('type' => $form_state['values']['pager']['type'], 'options' => $plugin->options);
-            $this->setOption('pager', $pager);
+            $plugin->init($this->view, $this, $plugin_options['options']);
+            $plugin_options = array('type' => $form_state['values'][$plugin_type]['type'], 'options' => $plugin->options);
+            $this->setOption($plugin_type, $plugin_options);
             if ($plugin->usesOptions()) {
-              $form_state['view']->addFormToStack('display', $this->display['id'], 'pager_options');
+              $form_state['view']->addFormToStack('display', $this->display['id'], $plugin_type . '_options');
             }
           }
         }
-
         break;
+
+      case 'access_options':
+      case 'cache_options':
+      case 'exposed_form_options':
       case 'pager_options':
-        $plugin = $this->getPlugin('pager');
-        if ($plugin) {
-          $pager = $this->getOption('pager');
-          $plugin->submitOptionsForm($form['pager_options'], $form_state);
-          $pager['options'] = $form_state['values'][$section];
-          $this->setOption('pager', $pager);
+      case 'row_options':
+      case 'style_options':
+        // Submit plugin options. Every section with "_options" in it, belongs to
+        // a plugin type, like "style_options".
+        $plugin_type = str_replace('_options', '', $form_state['section']);
+        if ($plugin = $this->getPlugin($plugin_type)) {
+          $plugin_options = $this->getOption($plugin_type);
+          $plugin->submitOptionsForm($form[$plugin_type . '_options'], $form_state);
+          $plugin_options['options'] = $form_state['values'][$section];
+          $this->setOption($plugin_type, $plugin_options);
         }
         break;
     }
@@ -2507,17 +2418,18 @@ abstract class DisplayPluginBase extends PluginBase {
   /**
    * Determine if the user has access to this display of the view.
    */
-  public function access($account = NULL) {
+  public function access(AccountInterface $account = NULL) {
     if (!isset($account)) {
       $account = \Drupal::currentUser();
     }
 
     // Full override.
-    if (user_access('access all views', $account)) {
+    if ($account->hasPermission('access all views')) {
       return TRUE;
     }
 
     $plugin = $this->getPlugin('access');
+      /** @var \Drupal\views\Plugin\views\access\AccessPluginBase $plugin */
     if ($plugin) {
       return $plugin->access($account);
     }

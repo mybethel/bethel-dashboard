@@ -7,9 +7,6 @@
 
 namespace Drupal\entity_test\Entity;
 
-use Drupal\Core\Entity\Annotation\EntityType;
-use Drupal\Core\Annotation\Translation;
-
 /**
  * Defines a test entity class with no access controller.
  *
@@ -17,7 +14,7 @@ use Drupal\Core\Annotation\Translation;
  *   id = "entity_test_default_access",
  *   label = @Translation("Test entity with default access"),
  *   controllers = {
- *     "storage" = "Drupal\entity_test\EntityTestStorageController"
+ *     "storage" = "Drupal\Core\Entity\FieldableDatabaseStorageController"
  *   },
  *   base_table = "entity_test",
  *   entity_keys = {

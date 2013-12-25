@@ -1,10 +1,12 @@
+/**
+ * @file
+ * A Backbone Model for the state of an in-place editable entity in the DOM.
+ */
+
 (function (_, $, Backbone, Drupal) {
 
 "use strict";
 
-/**
- * State of an in-place editable entity in the DOM.
- */
 Drupal.edit.EntityModel = Backbone.Model.extend({
 
   defaults: {
@@ -13,6 +15,12 @@ Drupal.edit.EntityModel = Backbone.Model.extend({
     // entities in the DOM to EntityModels in memory.
     el: null,
     // An entity ID, of the form "<entity type>/<entity ID>", e.g. "node/1".
+    entityID: null,
+    // An entity instance ID. The first intance of a specific entity (i.e. with
+    // a given entity ID) is assigned 0, the second 1, and so on.
+    entityInstanceID: null,
+    // The unique ID of this entity instance on the page, of the form "<entity
+    // type>/<entity ID>[entity instance ID]", e.g. "node/1[0]".
     id: null,
     // The label of the entity.
     label: null,
@@ -73,9 +81,11 @@ Drupal.edit.EntityModel = Backbone.Model.extend({
     var to = state;
     switch (to) {
       case 'closed':
-        this.set('isActive', false);
-        this.set('inTempStore', false);
-        this.set('isDirty', false);
+        this.set({
+          'isActive': false,
+          'inTempStore': false,
+          'isDirty': false
+        });
         break;
 
       case 'launching':
@@ -95,18 +105,9 @@ Drupal.edit.EntityModel = Backbone.Model.extend({
 
       case 'committing':
         // The user indicated they want to save the entity.
-        // For fields already in a candidate-ish state, trigger a change
-        // event so that the entityModel can move to the next state in
-        // committing.
-        this.get('fields').chain()
-          .filter(function (fieldModel) {
-            return _.intersection([fieldModel.get('state')], Drupal.edit.app.readyFieldStates).length;
-          })
-          .each(function (fieldModel) {
-            fieldModel.trigger('change:state', fieldModel, fieldModel.get('state'), options);
-          });
+        var fields = this.get('fields');
         // For fields that are in an active state, transition them to candidate.
-        this.get('fields').chain()
+        fields.chain()
           .filter(function (fieldModel) {
             return _.intersection([fieldModel.get('state')], ['active']).length;
           })
@@ -115,7 +116,7 @@ Drupal.edit.EntityModel = Backbone.Model.extend({
           });
         // For fields that are in a changed state, field values must first be
         // stored in TempStore.
-        this.get('fields').chain()
+        fields.chain()
           .filter(function (fieldModel) {
             return _.intersection([fieldModel.get('state')], Drupal.edit.app.changedFieldStates).length;
           })
@@ -185,17 +186,55 @@ Drupal.edit.EntityModel = Backbone.Model.extend({
   },
 
   /**
+   * Updates a Field and Entity model's "inTempStore" when appropriate.
+   *
+   * Helper function.
+   *
+   * @param Drupal.edit.EntityModel entityModel
+   *   The model of the entity for which a field's state attribute has changed.
+   * @param Drupal.edit.FieldModel fieldModel
+   *   The model of the field whose state attribute has changed.
+   *
+   * @see fieldStateChange()
+   */
+  _updateInTempStoreAttributes: function (entityModel, fieldModel) {
+    var current = fieldModel.get('state');
+    var previous = fieldModel.previous('state');
+    var fieldsInTempStore = entityModel.get('fieldsInTempStore');
+    // If the fieldModel changed to the 'saved' state: remember that this
+    // field was saved to TempStore.
+    if (current === 'saved') {
+      // Mark the entity as saved in TempStore, so that we can pass the
+      // proper "reset TempStore" boolean value when communicating with the
+      // server.
+      entityModel.set('inTempStore', true);
+      // Mark the field as saved in TempStore, so that visual indicators
+      // signifying just that may be rendered.
+      fieldModel.set('inTempStore', true);
+      // Remember that this field is in TempStore, restore when rerendered.
+      fieldsInTempStore.push(fieldModel.get('fieldID'));
+      fieldsInTempStore = _.uniq(fieldsInTempStore);
+      entityModel.set('fieldsInTempStore', fieldsInTempStore);
+    }
+    // If the fieldModel changed to the 'candidate' state from the
+    // 'inactive' state, then this is a field for this entity that got
+    // rerendered. Restore its previous 'inTempStore' attribute value.
+    else if (current === 'candidate' && previous === 'inactive') {
+      fieldModel.set('inTempStore', _.intersection([fieldModel.get('fieldID')], fieldsInTempStore).length > 0);
+    }
+  },
+
+  /**
    * Reacts to state changes in this entity's fields.
    *
    * @param Drupal.edit.FieldModel fieldModel
-   *   The model of the field whose state property changed.
+   *   The model of the field whose state attribute changed.
    * @param String state
    *   The state of the associated field. One of Drupal.edit.FieldModel.states.
    */
   fieldStateChange: function (fieldModel, state) {
     var entityModel = this;
     var fieldState = state;
-    var fieldsInTempStore = this.get('fieldsInTempStore');
     // Switch on the entityModel state.
     // The EntityModel responds to FieldModel state changes as a function of its
     // state. For example, a field switching back to 'candidate' state when its
@@ -237,43 +276,22 @@ Drupal.edit.EntityModel = Backbone.Model.extend({
         if (fieldState === 'changed') {
           entityModel.set('isDirty', true);
         }
-        // If the fieldModel changed to the 'saved' state: remember that this
-        // field was saved to TempStore.
-        else if (fieldState === 'saved') {
-          // Mark the entity as saved in TempStore, so that we can pass the
-          // proper "reset TempStore" boolean value when communicating with the
-          // server.
-          entityModel.set('inTempStore', true);
-          // Mark the field as saved in TempStore, so that visual indicators
-          // signifying just that may be rendered.
-          fieldModel.set('inTempStore', true);
-          // Remember that this field is in TempStore, restore when rerendered.
-          fieldsInTempStore.push(fieldModel.id);
-          fieldsInTempStore = _.uniq(fieldsInTempStore);
-          entityModel.set('fieldsInTempStore', fieldsInTempStore);
-        }
-        // If the fieldModel changed to the 'candidate' state from the
-        // 'inactive' state, then this is a field for this entity that got
-        // rerendered. Restore its previous 'inTempStore' attribute value.
-        else if (fieldState === 'candidate' && fieldModel.previous('state') === 'inactive') {
-          fieldModel.set('inTempStore', _.intersection([fieldModel.id], fieldsInTempStore).length > 0);
+        else {
+          this._updateInTempStoreAttributes(entityModel, fieldModel);
         }
         break;
 
       case 'committing':
         // If the field save returned a validation error, set the state of the
-        // entity back to opened.
+        // entity back to 'opened'.
         if (fieldState === 'invalid') {
           // A state change in reaction to another state change must be deferred.
           _.defer(function() {
             entityModel.set('state', 'opened', { reason: 'invalid' });
           });
         }
-        // If the fieldModel changed to the 'candidate' state from the
-        // 'inactive' state, then this is a field for this entity that got
-        // rerendered. Restore its previous 'inTempStore' attribute value.
-        else if (fieldState === 'candidate' && fieldModel.previous('state') === 'inactive') {
-          fieldModel.set('inTempStore', _.intersection([fieldModel.id], fieldsInTempStore).length > 0);
+        else {
+          this._updateInTempStoreAttributes(entityModel, fieldModel);
         }
 
         // Attempt to save the entity. If the entity's fields are not yet all in
@@ -288,6 +306,16 @@ Drupal.edit.EntityModel = Backbone.Model.extend({
                 'state': 'deactivating',
                 'isCommitting' : false
               }, {'saved': true});
+            },
+            error: function () {
+              // Reset the "isCommitting" mutex.
+              entityModel.set('isCommitting', false);
+              // Change the state back to "opened", to allow the user to hit the
+              // "Save" button again.
+              entityModel.set('state', 'opened', { reason: 'networkerror' });
+              // Show a modal to inform the user of the network error.
+              var message = Drupal.t('Your changes to <q>@entity-title</q> could not be saved, either due to a website problem or a network connection problem.<br>Please try again.', { '@entity-title' : entityModel.get('label') });
+              Drupal.edit.util.networkErrorModal(Drupal.t('Sorry!'), message);
             }
           });
         }
@@ -335,9 +363,15 @@ Drupal.edit.EntityModel = Backbone.Model.extend({
     var $el = $('#edit-entity-toolbar').find('.action-save'); // This is the span element inside the button.
     // Create a Drupal.ajax instance to save the entity.
     var entitySaverAjax = new Drupal.ajax(id, $el, {
-      url: Drupal.url('edit/entity/' + entityModel.id),
+      url: Drupal.url('edit/entity/' + entityModel.get('entityID')),
       event: 'edit-save.edit',
-      progress: { type: 'none' }
+      progress: { type: 'none' },
+      error: function () {
+        $el.off('edit-save.edit');
+        // Let the Drupal.edit.EntityModel Backbone model's error() method
+        // handle errors.
+        options.error.call(entityModel);
+      }
     });
     // Entity saved successfully.
     entitySaverAjax.commands.editEntitySaved = function(ajax, response, status) {
@@ -430,8 +464,9 @@ Drupal.edit.EntityModel = Backbone.Model.extend({
         accept = true;
       }
       // Allow: committing -> opened.
-      // Necessary to be able to correct an invalid field.
-      else if (from === 'committing' && to === 'opened' && context.reason && context.reason === 'invalid') {
+      // Necessary to be able to correct an invalid field, or to hit the "Save"
+      // button again after a server/network error.
+      else if (from === 'committing' && to === 'opened' && context.reason && (context.reason === 'invalid' || context.reason === 'networkerror')) {
         accept = true;
       }
       // Allow: deactivating -> opened.
@@ -477,6 +512,8 @@ Drupal.edit.EntityModel = Backbone.Model.extend({
    */
   destroy: function (options) {
     Backbone.Model.prototype.destroy.apply(this, options);
+
+    this.off(null, null, this);
 
     // Destroy all fields of this entity.
     this.get('fields').each(function (fieldModel) {

@@ -8,8 +8,6 @@
 namespace Drupal\aggregator\Plugin\Block;
 
 use Drupal\block\BlockBase;
-use Drupal\block\Annotation\Block;
-use Drupal\Core\Annotation\Translation;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityStorageControllerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -70,7 +68,7 @@ class AggregatorFeedBlock extends BlockBase implements ContainerFactoryPluginInt
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('plugin.manager.entity')->getStorageController('aggregator_feed'),
+      $container->get('entity.manager')->getStorageController('aggregator_feed'),
       $container->get('database')
     );
   }

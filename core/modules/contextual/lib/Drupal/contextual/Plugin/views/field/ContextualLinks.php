@@ -7,7 +7,6 @@
 
 namespace Drupal\contextual\Plugin\views\field;
 
-use Drupal\Component\Annotation\PluginID;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
 use Drupal\views\ResultRow;
 
@@ -19,6 +18,13 @@ use Drupal\views\ResultRow;
  * @PluginID("contextual_links")
  */
 class ContextualLinks extends FieldPluginBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public function usesGroupBy() {
+    return FALSE;
+  }
 
   protected function defineOptions() {
     $options = parent::defineOptions();

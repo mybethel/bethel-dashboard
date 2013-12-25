@@ -8,8 +8,6 @@
 namespace Drupal\language\Plugin\Block;
 
 use Drupal\block\BlockBase;
-use Drupal\block\Annotation\Block;
-use Drupal\Core\Annotation\Translation;
 use Drupal\Core\Session\AccountInterface;
 
 /**
@@ -37,7 +35,7 @@ class LanguageBlock extends BlockBase {
   public function build() {
     $build = array();
     $path = drupal_is_front_page() ? '<front>' : current_path();
-    list(, $type) = explode(':', $this->getPluginId());
+    $type = $this->getDerivativeId();
     $links = language_negotiation_get_switch_links($type, $path);
 
     if (isset($links->links)) {

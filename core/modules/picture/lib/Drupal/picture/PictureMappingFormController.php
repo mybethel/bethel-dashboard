@@ -73,7 +73,8 @@ class PictureMappingFormController extends EntityFormController {
     $image_styles = image_style_options(TRUE);
     foreach ($picture_mapping->mappings as $breakpoint_id => $mapping) {
       foreach ($mapping as $multiplier => $image_style) {
-        $label = $multiplier . ' ' . $picture_mapping->breakpointGroup->breakpoints[$breakpoint_id]->name . ' [' . $picture_mapping->breakpointGroup->breakpoints[$breakpoint_id]->mediaQuery . ']';
+        $breakpoint = $picture_mapping->breakpointGroup->getBreakpointById($breakpoint_id);
+        $label = $multiplier . ' ' . $breakpoint->name . ' [' . $breakpoint->mediaQuery . ']';
         $form['mappings'][$breakpoint_id][$multiplier] = array(
           '#type' => 'select',
           '#title' => check_plain($label),
@@ -125,7 +126,7 @@ class PictureMappingFormController extends EntityFormController {
       }
       // Make sure at least one mapping is defined.
       elseif (!$picture_mapping->isNew() && !$picture_mapping->hasMappings()) {
-        form_set_error('mappings', $this->t('Please select at least one mapping.'));
+        $this->setFormError('mappings', $form_state, $this->t('Please select at least one mapping.'));
       }
     }
   }

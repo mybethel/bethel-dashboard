@@ -10,6 +10,7 @@ namespace Drupal\Core\Entity;
 use Drupal\Component\Plugin\PluginManagerBase;
 use Drupal\Component\Plugin\Factory\DefaultFactory;
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Field\FieldDefinition;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Language\LanguageManager;
@@ -301,9 +302,9 @@ class EntityManager extends PluginManagerBase implements EntityManagerInterface 
     $admin_path = '';
     $entity_info = $this->getDefinition($entity_type);
     // Check for an entity type's admin base path.
-    if (isset($entity_info['route_base_path'])) {
-      // Replace any dynamic 'bundle' portion of the path with the actual bundle.
-      $admin_path = str_replace('{bundle}', $bundle, $entity_info['route_base_path']);
+    if (isset($entity_info['links']['admin-form'])) {
+      $route_parameters[$entity_info['bundle_entity_type']] = $bundle;
+      $admin_path = \Drupal::urlGenerator()->getPathFromRoute($entity_info['links']['admin-form'], $route_parameters);
     }
 
     return $admin_path;
@@ -313,10 +314,11 @@ class EntityManager extends PluginManagerBase implements EntityManagerInterface 
    * {@inheritdoc}
    */
   public function getAdminRouteInfo($entity_type, $bundle) {
+    $entity_info = $this->getDefinition($entity_type);
     return array(
       'route_name' => "field_ui.overview_$entity_type",
       'route_parameters' => array(
-        'bundle' => $bundle,
+        $entity_info['bundle_entity_type'] => $bundle,
       )
     );
   }
@@ -332,17 +334,12 @@ class EntityManager extends PluginManagerBase implements EntityManagerInterface 
         $this->entityFieldInfo[$entity_type] = $cache->data;
       }
       else {
+        // @todo: Refactor to allow for per-bundle overrides.
+        // See https://drupal.org/node/2114707.
         $class = $this->factory->getPluginClass($entity_type, $this->getDefinition($entity_type));
 
-        $base_definitions = $class::baseFieldDefinitions($entity_type);
-        foreach ($base_definitions as &$base_definition) {
-          // Support old-style field types to avoid that all base field
-          // definitions need to be changed.
-          // @todo: Remove after https://drupal.org/node/2047229.
-          $base_definition['type'] = preg_replace('/(.+)_field/', 'field_item:$1', $base_definition['type']);
-        }
         $this->entityFieldInfo[$entity_type] = array(
-          'definitions' => $base_definitions,
+          'definitions' => $class::baseFieldDefinitions($entity_type),
           // Contains definitions of optional (per-bundle) fields.
           'optional' => array(),
           // An array keyed by bundle name containing the optional fields added
@@ -356,22 +353,27 @@ class EntityManager extends PluginManagerBase implements EntityManagerInterface 
         $result = $this->moduleHandler->invokeAll('entity_field_info', array($entity_type));
         $this->entityFieldInfo[$entity_type] = NestedArray::mergeDeep($this->entityFieldInfo[$entity_type], $result);
 
+        // Automatically set the field name for non-configurable fields.
+        foreach (array('definitions', 'optional') as $key) {
+          foreach ($this->entityFieldInfo[$entity_type][$key] as $field_name => &$definition) {
+            if ($definition instanceof FieldDefinition) {
+              $definition->setName($field_name);
+            }
+          }
+        }
+
+        // Invoke alter hooks.
         $hooks = array('entity_field_info', $entity_type . '_field_info');
         $this->moduleHandler->alter($hooks, $this->entityFieldInfo[$entity_type], $entity_type);
 
-        // Enforce fields to be multiple and untranslatable by default.
+        // Ensure all basic fields are not defined as translatable.
         $entity_info = $this->getDefinition($entity_type);
         $keys = array_intersect_key(array_filter($entity_info['entity_keys']), array_flip(array('id', 'revision', 'uuid', 'bundle')));
         $untranslatable_fields = array_flip(array('langcode') + $keys);
         foreach (array('definitions', 'optional') as $key) {
-          foreach ($this->entityFieldInfo[$entity_type][$key] as $name => &$definition) {
-            $definition['list'] = TRUE;
-            // Ensure ids and langcode fields are never made translatable.
-            if (isset($untranslatable_fields[$name]) && !empty($definition['translatable'])) {
-              throw new \LogicException(format_string('The @field field cannot be translatable.', array('@field' => $definition['label'])));
-            }
-            if (!isset($definition['translatable'])) {
-              $definition['translatable'] = FALSE;
+          foreach ($this->entityFieldInfo[$entity_type][$key] as $field_name => &$definition) {
+            if (isset($untranslatable_fields[$field_name]) && $definition->isTranslatable()) {
+              throw new \LogicException(format_string('The @field field cannot be translatable.', array('@field' => $definition->getLabel())));
             }
           }
         }

@@ -8,11 +8,10 @@
 namespace Drupal\field_ui;
 
 use Drupal\Component\Plugin\PluginManagerBase;
+use Drupal\Core\Entity\Display\EntityDisplayInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Field\FieldTypePluginManager;
-use Drupal\entity\EntityDisplayBaseInterface;
 use Drupal\field\FieldInstanceInterface;
-use Drupal\field_ui\OverviewBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -82,10 +81,12 @@ abstract class DisplayOverviewBase extends OverviewBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state, $entity_type = NULL, $bundle = NULL, $mode = NULL) {
+  public function buildForm(array $form, array &$form_state, $entity_type = NULL, $bundle = NULL) {
     parent::buildForm($form, $form_state, $entity_type, $bundle);
 
-    $this->mode = (isset($mode) ? $mode : 'default');
+    if (empty($this->mode)) {
+      $this->mode = 'default';
+    }
 
     // Gather type information.
     $instances = field_info_instances($this->entity_type, $this->bundle);
@@ -122,6 +123,20 @@ abstract class DisplayOverviewBase extends OverviewBase {
       // Add Ajax wrapper.
       '#prefix' => '<div id="field-display-overview-wrapper">',
       '#suffix' => '</div>',
+      '#tabledrag' => array(
+        array(
+          'action' => 'order',
+          'relationship' => 'sibling',
+          'group' => 'field-weight',
+        ),
+        array(
+          'action' => 'match',
+          'relationship' => 'parent',
+          'group' => 'field-parent',
+          'subgroup' => 'field-parent',
+          'source' => 'field-name',
+        ),
+      ),
     );
 
     // Field rows.
@@ -193,10 +208,6 @@ abstract class DisplayOverviewBase extends OverviewBase {
 
     $form['#attached']['library'][] = array('field_ui', 'drupal.field_ui');
 
-    // Add tabledrag behavior.
-    $form['#attached']['drupal_add_tabledrag'][] = array('field-display-overview', 'order', 'sibling', 'field-weight');
-    $form['#attached']['drupal_add_tabledrag'][] = array('field-display-overview', 'match', 'parent', 'field-parent', 'field-parent', 'field-name');
-
     return $form;
   }
 
@@ -207,7 +218,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
    *   The field ID.
    * @param \Drupal\field\FieldInstanceInterface $instance
    *   The field instance.
-   * @param \Drupal\entity\EntityDisplayBaseInterface $entity_display
+   * @param \Drupal\Core\Entity\Display\EntityDisplayInterface $entity_display
    *   The entity display.
    * @param array $form
    *   An associative array containing the structure of the form.
@@ -217,9 +228,9 @@ abstract class DisplayOverviewBase extends OverviewBase {
    * @return array
    *   A table row array.
    */
-  protected function buildFieldRow($field_id, FieldInstanceInterface $instance, EntityDisplayBaseInterface $entity_display, array $form, array &$form_state) {
+  protected function buildFieldRow($field_id, FieldInstanceInterface $instance, EntityDisplayInterface $entity_display, array $form, array &$form_state) {
     $display_options = $entity_display->getComponent($field_id);
-    $label = $instance->getFieldLabel();
+    $label = $instance->getLabel();
 
     $field_row = array(
       '#attributes' => array('class' => array('draggable', 'tabledrag-leaf')),
@@ -227,7 +238,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
       '#region_callback' => array($this, 'getRowRegion'),
       '#js_settings' => array(
         'rowHandler' => 'field',
-        'defaultPlugin' => $this->getDefaultPlugin($instance->getFieldType()),
+        'defaultPlugin' => $this->getDefaultPlugin($instance->getType()),
       ),
       'human_name' => array(
         '#markup' => check_plain($label),
@@ -264,7 +275,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
         '#type' => 'select',
         '#title' => $this->t('Plugin for @title', array('@title' => $label)),
         '#title_display' => 'invisible',
-        '#options' => $this->getPluginOptions($instance->getFieldType()),
+        '#options' => $this->getPluginOptions($instance->getType()),
         '#default_value' => $display_options ? $display_options['type'] : 'hidden',
         '#parents' => array('fields', $field_id, 'type'),
         '#attributes' => array('class' => array('field-plugin-type')),
@@ -356,7 +367,10 @@ abstract class DisplayOverviewBase extends OverviewBase {
             '#cell_attributes' => array('class' => array('field-plugin-summary-cell')),
           );
         }
-        if ($plugin->getSettings()) {
+
+        // Check selected plugin settings to display edit link or not.
+        $plugin_definition = $plugin->getPluginDefinition();
+        if ($plugin_definition['settings']) {
           $field_row['settings_edit'] = $base_button + array(
             '#type' => 'image_button',
             '#name' => $field_id . '_settings_edit',
@@ -383,7 +397,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
    *   The field ID.
    * @param array $extra_field
    *   The pseudo-field element.
-   * @param \Drupal\entity\EntityDisplayBaseInterface $entity_display
+   * @param \Drupal\Core\Entity\Display\EntityDisplayInterface $entity_display
    *   The entity display.
    *
    * @return array
@@ -398,7 +412,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
       '#region_callback' => array($this, 'getRowRegion'),
       '#js_settings' => array('rowHandler' => 'field'),
       'human_name' => array(
-        '#markup' => check_plain($extra_field['label']),
+        '#markup' => $extra_field['label'],
       ),
       'weight' => array(
         '#type' => 'textfield',
@@ -621,7 +635,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
    * @param string $mode
    *   A view or form mode.
    *
-   * @return \Drupal\entity\EntityDisplayBaseInterface
+   * @return \Drupal\Core\Entity\Display\EntityDisplayInterface
    *   An entity display.
    */
   abstract protected function getEntityDisplay($mode);

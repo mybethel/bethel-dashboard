@@ -6,6 +6,7 @@
  */
 
 namespace Drupal\Core\Entity;
+use Drupal\Core\Entity\Query\QueryInterface;
 
 /**
  * A base entity storage controller class.
@@ -45,15 +46,6 @@ abstract class EntityStorageControllerBase implements EntityStorageControllerInt
   protected $entityInfo;
 
   /**
-   * Additional arguments to pass to hook_TYPE_load().
-   *
-   * Set before calling Drupal\Core\Entity\DatabaseStorageController::attachLoad().
-   *
-   * @var array
-   */
-  protected $hookLoadArguments = array();
-
-  /**
    * Name of the entity's ID field in the entity database table.
    *
    * @var string
@@ -82,6 +74,20 @@ abstract class EntityStorageControllerBase implements EntityStorageControllerInt
     $this->entityInfo = $entity_info;
     // Check if the entity type supports static caching of loaded entities.
     $this->cache = !empty($this->entityInfo['static_cache']);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function entityType() {
+    return $this->entityType;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function entityInfo() {
+    return $this->entityInfo;
   }
 
   /**
@@ -150,6 +156,53 @@ abstract class EntityStorageControllerBase implements EntityStorageControllerInt
     module_invoke_all($this->entityType . '_' . $hook, $entity);
     // Invoke the respective entity-level hook.
     module_invoke_all('entity_' . $hook, $entity, $this->entityType);
+  }
+
+  /**
+   * Attaches data to entities upon loading.
+   *
+   * @param array $queried_entities
+   *   Associative array of query results, keyed on the entity ID.
+   */
+  protected function postLoad(array &$queried_entities) {
+    $entity_class = $this->entityInfo['class'];
+    $entity_class::postLoad($this, $queried_entities);
+    // Call hook_entity_load().
+    foreach (\Drupal::moduleHandler()->getImplementations('entity_load') as $module) {
+      $function = $module . '_entity_load';
+      $function($queried_entities, $this->entityType);
+    }
+    // Call hook_TYPE_load().
+    foreach (\Drupal::moduleHandler()->getImplementations($this->entityType . '_load') as $module) {
+      $function = $module . '_' . $this->entityType . '_load';
+      $function($queried_entities);
+    }
+  }
+
+  /**
+   * Builds an entity query.
+   *
+   * @param \Drupal\Core\Entity\Query\QueryInterface $entity_query
+   *   EntityQuery instance.
+   * @param array $values
+   *   An associative array of properties of the entity, where the keys are the
+   *   property names and the values are the values those properties must have.
+   */
+  protected function buildPropertyQuery(QueryInterface $entity_query, array $values) {
+    foreach ($values as $name => $value) {
+      $entity_query->condition($name, $value);
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function loadByProperties(array $values = array()) {
+    // Build a query to fetch the entity IDs.
+    $entity_query = \Drupal::entityQuery($this->entityType);
+    $this->buildPropertyQuery($entity_query, $values);
+    $result = $entity_query->execute();
+    return $result ? $this->loadMultiple($result) : array();
   }
 
 }

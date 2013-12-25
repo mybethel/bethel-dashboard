@@ -1,6 +1,5 @@
 <?php
 
-use Drupal\Component\Utility\Crypt;
 use Drupal\Component\Utility\Json;
 use Drupal\Component\Utility\Number;
 use Drupal\Component\Utility\Settings;
@@ -21,6 +20,7 @@ use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Routing\GeneratorNotInitializedException;
 use Drupal\Core\SystemListingInfo;
 use Drupal\Core\Template\Attribute;
+use Drupal\Core\Render\Element;
 
 /**
  * @file
@@ -285,28 +285,6 @@ function drupal_get_profile() {
   return $profile;
 }
 
-
-/**
- * Sets the breadcrumb trail for the current page.
- *
- * @param $breadcrumb
- *   Array of links, starting with "home" and proceeding up to but not including
- *   the current page.
- *
- * @deprecated This will be removed in 8.0. Instead, register a new breadcrumb
- *   builder service.
- *
- * @see \Drupal\Core\Breadcrumb\BreadcrumbBuilderInterface
- */
-function drupal_set_breadcrumb($breadcrumb = NULL) {
-  $stored_breadcrumb = &drupal_static(__FUNCTION__);
-
-  if (isset($breadcrumb)) {
-    $stored_breadcrumb = $breadcrumb;
-  }
-  return $stored_breadcrumb;
-}
-
 /**
  * Adds output to the HEAD tag of the HTML page.
  *
@@ -399,14 +377,15 @@ function drupal_add_feed($url = NULL, $title = '') {
   if (isset($url)) {
     $stored_feed_links[$url] = theme('feed_icon', array('url' => $url, 'title' => $title));
 
-    drupal_add_html_head_link(array(
+    $build['#attached']['drupal_add_html_head_link'][][] = array(
       'rel' => 'alternate',
       'type' => 'application/rss+xml',
       'title' => $title,
       // Force the URL to be absolute, for consistency with other <link> tags
       // output by Drupal.
       'href' => url($url, array('absolute' => TRUE)),
-    ));
+    );
+    drupal_render($build);
   }
   return $stored_feed_links;
 }
@@ -432,7 +411,8 @@ function drupal_get_feeds($delimiter = "\n") {
  * Processes a URL query parameter array to remove unwanted elements.
  *
  * @param $query
- *   (optional) An array to be processed. Defaults to $_GET.
+ *   (optional) An array to be processed. Defaults to \Drupal::request()->query
+ *   parameters.
  * @param $exclude
  *   (optional) A list of $query array keys to remove. Use "parent[child]" to
  *   exclude nested items.
@@ -511,7 +491,7 @@ function drupal_get_destination() {
  * The returned array contains a 'path' that may be passed separately to url().
  * For example:
  * @code
- *   $options = drupal_parse_url($_GET['destination']);
+ *   $options = drupal_parse_url(\Drupal::request()->query->get('destination'));
  *   $my_url = url($options['path'], $options);
  *   $my_link = l('Example link', $options['path'], $options);
  * @endcode
@@ -522,7 +502,7 @@ function drupal_get_destination() {
  * $options['query'] and the fragment into $options['fragment'].
  *
  * @param $url
- *   The URL string to parse, f.e. $_GET['destination'].
+ *   The URL string to parse.
  *
  * @return
  *   An associative array containing the keys:
@@ -645,7 +625,7 @@ function valid_url($url, $absolute = FALSE) {
  *   given step.
  *
  * @return bool
- *   TRUE if no step mismatch has occured, or FALSE otherwise.
+ *   TRUE if no step mismatch has occurred, or FALSE otherwise.
  *
  * @deprecated as of Drupal 8.0. Use
  *   \Drupal\Component\Utility\Number::validStep() directly instead
@@ -917,39 +897,11 @@ function format_xml_elements($array) {
  *
  * @see t()
  * @see format_string()
+ *
+ * @deprecated as of Drupal 8.0. Use \Drupal::translation()->formatPlural()
  */
 function format_plural($count, $singular, $plural, array $args = array(), array $options = array()) {
-  $args['@count'] = $count;
-  // Join both forms to search a translation.
-  $tranlatable_string = implode(LOCALE_PLURAL_DELIMITER, array($singular, $plural));
-  // Translate as usual.
-  $translated_strings = t($tranlatable_string, $args, $options);
-  // Split joined translation strings into array.
-  $translated_array = explode(LOCALE_PLURAL_DELIMITER, $translated_strings);
-
-  if ($count == 1) {
-    return $translated_array[0];
-  }
-
-  // Get the plural index through the gettext formula.
-  // @todo implement static variable to minimize function_exists() usage.
-  $index = (function_exists('locale_get_plural')) ? locale_get_plural($count, isset($options['langcode']) ? $options['langcode'] : NULL) : -1;
-  if ($index == 0) {
-    // Singular form.
-    return $translated_array[0];
-  }
-  else {
-    if (isset($translated_array[$index])) {
-      // N-th plural form.
-      return $translated_array[$index];
-    }
-    else {
-      // If the index cannot be computed or there's no translation, use
-      // the second plural form as a fallback (which allows for most flexiblity
-      // with the replaceable @count value).
-      return $translated_array[1];
-    }
-  }
+  return \Drupal::translation()->formatPlural($count, $singular, $plural, $args, $options);
 }
 
 /**
@@ -1027,31 +979,11 @@ function format_size($size, $langcode = NULL) {
  *
  * @return
  *   A translated string representation of the interval.
+ *
+ * @deprecated as of Drupal 8.0. Use \Drupal::service('date')->formatInterval().
  */
 function format_interval($interval, $granularity = 2, $langcode = NULL) {
-  $units = array(
-    '1 year|@count years' => 31536000,
-    '1 month|@count months' => 2592000,
-    '1 week|@count weeks' => 604800,
-    '1 day|@count days' => 86400,
-    '1 hour|@count hours' => 3600,
-    '1 min|@count min' => 60,
-    '1 sec|@count sec' => 1
-  );
-  $output = '';
-  foreach ($units as $key => $value) {
-    $key = explode('|', $key);
-    if ($interval >= $value) {
-      $output .= ($output ? ' ' : '') . format_plural(floor($interval / $value), $key[0], $key[1], array(), array('langcode' => $langcode));
-      $interval %= $value;
-      $granularity--;
-    }
-
-    if ($granularity == 0) {
-      break;
-    }
-  }
-  return $output ? $output : t('0 sec', array(), array('langcode' => $langcode));
+  return \Drupal::service('date')->formatInterval($interval, $granularity, $langcode);
 }
 
 /**
@@ -1895,6 +1827,9 @@ function drupal_clean_css_identifier($identifier, $filter = array(' ' => '-', '_
   // We strip out any character not in the above list.
   $identifier = preg_replace('/[^\x{002D}\x{0030}-\x{0039}\x{0041}-\x{005A}\x{005F}\x{0061}-\x{007A}\x{00A1}-\x{FFFF}]/u', '', $identifier);
 
+  // Identifiers cannot start with a digit, two hyphens, or a hyphen followed by a digit.
+  $identifier = preg_replace(array('/^[0-9]/', '/^(-[0-9])|^(--)/'), array('_', '__') , $identifier);
+
   return $identifier;
 }
 
@@ -1955,6 +1890,7 @@ function drupal_html_id($id) {
   // take into account IDs that are already in use on the base page.
   $seen_ids_init = &drupal_static(__FUNCTION__ . ':init');
   if (!isset($seen_ids_init)) {
+    $ajax_html_ids = \Drupal::request()->request->get('ajax_html_ids');
     // Ideally, Drupal would provide an API to persist state information about
     // prior page requests in the database, and we'd be able to add this
     // function's $seen_ids static variable to that state information in order
@@ -1964,7 +1900,7 @@ function drupal_html_id($id) {
     // normally not recommended as it could open up security risks, but because
     // the raw POST data is cast to a number before being returned by this
     // function, this usage is safe.
-    if (empty($_POST['ajax_html_ids'])) {
+    if (empty($ajax_html_ids)) {
       $seen_ids_init = array();
     }
     else {
@@ -1973,7 +1909,7 @@ function drupal_html_id($id) {
       // requested id. $_POST['ajax_html_ids'] contains the ids as they were
       // returned by this function, potentially with the appended counter, so
       // we parse that to reconstruct the $seen_ids array.
-      $ajax_html_ids = explode(' ', $_POST['ajax_html_ids']);
+      $ajax_html_ids = explode(' ', $ajax_html_ids);
       foreach ($ajax_html_ids as $seen_id) {
         // We rely on '--' being used solely for separating a base id from the
         // counter, which this function ensures when returning an id.
@@ -2214,11 +2150,18 @@ function drupal_add_js($data = NULL, $options = NULL) {
           $scriptPath = $GLOBALS['script_path'];
           $pathPrefix = '';
           url('', array('script' => &$scriptPath, 'prefix' => &$pathPrefix));
+          $current_path = current_path();
+          $current_path_is_admin = FALSE;
+          // The function path_is_admin() is not available on update.php pages.
+          if (!(defined('MAINTENANCE_MODE') && MAINTENANCE_MODE === 'update')) {
+            $current_path_is_admin = path_is_admin($current_path);
+          }
           $javascript['settings']['data'][] = array(
             'basePath' => base_path(),
             'scriptPath' => $scriptPath,
             'pathPrefix' => $pathPrefix,
-            'currentPath' => current_path(),
+            'currentPath' => $current_path,
+            'currentPathIsAdmin' => $current_path_is_admin,
           );
         }
         // All JavaScript settings are placed in the header of the page with
@@ -2330,7 +2273,7 @@ function drupal_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALS
       global $theme_key;
       // Provide the page with information about the theme that's used, so that
       // a later AJAX request can be rendered using the same theme.
-      // @see ajax_base_page_theme()
+      // @see \Drupal\Core\Theme\AjaxBasePageNegotiator
       $setting['ajaxPageState']['theme'] = $theme_key;
       // Checks that the DB is available before filling theme_token.
       if (!defined('MAINTENANCE_MODE')) {
@@ -2839,7 +2782,6 @@ function drupal_get_library($module, $name = NULL) {
             // key.
             unset($module_libraries[$key]['js'][$file]);
             $file = $options;
-            $options = array();
           }
           $module_libraries[$key]['js'][$file]['version'] = $module_libraries[$key]['version'];
         }
@@ -2857,7 +2799,7 @@ function drupal_get_library($module, $name = NULL) {
 }
 
 /**
- * Assists in adding the tableDrag JavaScript behavior to a themed table.
+ * Assists in attaching the tableDrag JavaScript behavior to a themed table.
  *
  * Draggable tables should be used wherever an outline or list of sortable items
  * needs to be arranged by an end-user. Draggable tables are very flexible and
@@ -2896,9 +2838,13 @@ function drupal_get_library($module, $name = NULL) {
  * - Rows with the 'tabledrag-leaf' class cannot have child rows.
  * - Rows with the 'tabledrag-root' class cannot be nested under a parent row.
  *
- * Calling drupal_add_tabledrag() would then be written as such:
+ * Calling drupal_attach_tabledrag() would then be written as such:
  * @code
- * drupal_add_tabledrag('my-module-table', 'order', 'sibling', 'my-elements-weight');
+ * drupal_attach_tabledrag('my-module-table', array(
+ *   'action' => 'order',
+ *   'relationship' => 'sibling',
+ *   'group' => 'my-elements-weight',
+ * );
  * @endcode
  *
  * In a more complex case where there are several groups in one column (such as
@@ -2908,13 +2854,19 @@ function drupal_get_library($module, $name = NULL) {
  * $form['my_elements'][$region][$delta]['weight']['#attributes']['class'] = array('my-elements-weight', 'my-elements-weight-' . $region);
  * @endcode
  *
- * $group is still 'my-element-weight', and the additional $subgroup variable
- * will be passed in as 'my-elements-weight-' . $region. This also means that
- * you'll need to call drupal_add_tabledrag() once for every region added.
+ * The 'group' option is still 'my-element-weight', and the additional
+ * 'subgroup' option will be passed in as 'my-elements-weight-' . $region. This
+ * also means that you'll need to call drupal_attach_tabledrag() once for every
+ * region added.
  *
  * @code
  * foreach ($regions as $region) {
- *   drupal_add_tabledrag('my-module-table', 'order', 'sibling', 'my-elements-weight', 'my-elements-weight-' . $region);
+ *   drupal_attach_tabledrag('my-module-table', array(
+ *     'action' => 'order',
+ *     'relationship' => sibling',
+ *     'group' => 'my-elements-weight',
+ *     'subgroup' => my-elements-weight-' . $region,
+ *   ));
  * }
  * @endcode
  *
@@ -2924,69 +2876,71 @@ function drupal_get_library($module, $name = NULL) {
  * theme_menu_overview_form() for an example creating a table containing parent
  * relationships.
  *
- * Note that this function should be called from the theme layer, such as in a
- * .html.twig file, theme_ function, or in a template_preprocess function, not
- * in a form declaration. Though the same JavaScript could be added to the page
- * using drupal_add_js() directly, this function helps keep template files
- * clean and readable. It also prevents tabledrag.js from being added twice
- * accidentally.
+ * @param $element
+ *   A form element to attach the tableDrag behavior to.
+ * @param array $options
+ *   These options are used to generate JavaScript settings necessary to
+ *   configure the tableDrag behavior appropriately for this particular table.
+ *   An associative array containing the following keys:
+ *   - 'table_id': String containing the target table's id attribute.
+ *     If the table does not have an id, one will need to be set,
+ *     such as <table id="my-module-table">.
+ *   - 'action': String describing the action to be done on the form item.
+ *      Either 'match' 'depth', or 'order':
+ *     - 'match' is typically used for parent relationships.
+ *     - 'order' is typically used to set weights on other form elements with
+ *       the same group.
+ *     - 'depth' updates the target element with the current indentation.
+ *   - 'relationship': String describing where the "action" option
+ *     should be performed. Either 'parent', 'sibling', 'group', or 'self':
+ *     - 'parent' will only look for fields up the tree.
+ *     - 'sibling' will look for fields in the same group in rows above and
+ *       below it.
+ *     - 'self' affects the dragged row itself.
+ *     - 'group' affects the dragged row, plus any children below it (the entire
+ *       dragged group).
+ *   - 'group': A class name applied on all related form elements for this action.
+ *   - 'subgroup': (optional) If the group has several subgroups within it, this
+ *     string should contain the class name identifying fields in the same
+ *     subgroup.
+ *   - 'source': (optional) If the $action is 'match', this string should contain
+ *     the classname identifying what field will be used as the source value
+ *     when matching the value in $subgroup.
+ *   - 'hidden': (optional) The column containing the field elements may be
+ *     entirely hidden from view dynamically when the JavaScript is loaded. Set
+ *     to FALSE if the column should not be hidden.
+ *   - 'limit': (optional) Limit the maximum amount of parenting in this table.
  *
- * @param $table_id
- *   String containing the target table's id attribute. If the table does not
- *   have an id, one will need to be set, such as <table id="my-module-table">.
- * @param $action
- *   String describing the action to be done on the form item. Either 'match'
- *   'depth', or 'order'. Match is typically used for parent relationships.
- *   Order is typically used to set weights on other form elements with the same
- *   group. Depth updates the target element with the current indentation.
- * @param $relationship
- *   String describing where the $action variable should be performed. Either
- *   'parent', 'sibling', 'group', or 'self'. Parent will only look for fields
- *   up the tree. Sibling will look for fields in the same group in rows above
- *   and below it. Self affects the dragged row itself. Group affects the
- *   dragged row, plus any children below it (the entire dragged group).
- * @param $group
- *   A class name applied on all related form elements for this action.
- * @param $subgroup
- *   (optional) If the group has several subgroups within it, this string should
- *   contain the class name identifying fields in the same subgroup.
- * @param $source
- *   (optional) If the $action is 'match', this string should contain the class
- *   name identifying what field will be used as the source value when matching
- *   the value in $subgroup.
- * @param $hidden
- *   (optional) The column containing the field elements may be entirely hidden
- *   from view dynamically when the JavaScript is loaded. Set to FALSE if the
- *   column should not be hidden.
- * @param $limit
- *   (optional) Limit the maximum amount of parenting in this table.
  * @see theme_menu_overview_form()
  */
-function drupal_add_tabledrag($table_id, $action, $relationship, $group, $subgroup = NULL, $source = NULL, $hidden = TRUE, $limit = 0) {
-  $js_added = &drupal_static(__FUNCTION__, FALSE);
-  $tabledrag_id = &drupal_static(__FUNCTION__  . '_setting', FALSE);
+function drupal_attach_tabledrag(&$element, array $options) {
+  // Add default values to elements.
+  $options = $options + array(
+    'subgroup' => NULL,
+    'source' => NULL,
+    'hidden' => TRUE,
+    'limit' => 0
+  );
+
+  $group = $options['group'];
+
+  $tabledrag_id = &drupal_static(__FUNCTION__);
   $tabledrag_id = (!isset($tabledrag_id)) ? 0 : $tabledrag_id + 1;
 
-  if (!$js_added) {
-    // Add the table drag JavaScript to the page before the module JavaScript
-    // to ensure that table drag behaviors are registered before any module
-    // uses it.
-    drupal_add_library('system', 'drupal.tabledrag');
-    $js_added = TRUE;
-  }
-
   // If a subgroup or source isn't set, assume it is the same as the group.
-  $target = isset($subgroup) ? $subgroup : $group;
-  $source = isset($source) ? $source : $target;
-  $settings['tableDrag'][$table_id][$group][$tabledrag_id] = array(
+  $target = isset($options['subgroup']) ? $options['subgroup'] : $group;
+  $source = isset($options['source']) ? $options['source'] : $target;
+  $settings['tableDrag'][$options['table_id']][$group][$tabledrag_id] = array(
     'target' => $target,
     'source' => $source,
-    'relationship' => $relationship,
-    'action' => $action,
-    'hidden' => $hidden,
-    'limit' => $limit,
+    'relationship' => $options['relationship'],
+    'action' => $options['action'],
+    'hidden' => $options['hidden'],
+    'limit' => $options['limit'],
   );
-  drupal_add_js($settings, 'setting');
+
+  $element['#attached']['library'][] = array('system', 'drupal.tabledrag');
+  $element['#attached']['js'][] = array('data' => $settings, 'type' => 'setting');
 }
 
 /**
@@ -3147,7 +3101,6 @@ function _drupal_bootstrap_full($skip = FALSE) {
   // Let all modules take action before the menu system handles the request.
   // We do not want this while running update.php.
   if (!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'update') {
-    menu_set_custom_theme();
     drupal_theme_initialize();
   }
 }
@@ -3881,7 +3834,7 @@ function drupal_render(&$elements, $is_recursive_call = FALSE) {
   }
 
   // Get the children of the element, sorted by weight.
-  $children = element_children($elements, TRUE);
+  $children = Element::children($elements, TRUE);
 
   // Initialize this element's #children, unless a #pre_render callback already
   // preset #children.
@@ -4728,23 +4681,35 @@ function drupal_sort_title($a, $b) {
 
 /**
  * Checks if the key is a property.
+ *
+ * @see \Drupal\Core\Render\Element::property()
+ *
+ * @deprecated as of Drupal 8.0. Use Element::property() instead.
  */
 function element_property($key) {
-  return $key[0] == '#';
+  return Element::property($key);
 }
 
 /**
  * Gets properties of a structured array element (keys beginning with '#').
+ *
+ * @see \Drupal\Core\Render\Element::properties()
+ *
+ * @deprecated as of Drupal 8.0. Use Element::properties() instead.
  */
 function element_properties($element) {
-  return array_filter(array_keys((array) $element), 'element_property');
+  return Element::properties($element);
 }
 
 /**
  * Checks if the key is a child.
+ *
+ * @see \Drupal\Core\Render\Element::child()
+ *
+ * @deprecated as of Drupal 8.0. Use Element::child() instead.
  */
 function element_child($key) {
-  return !isset($key[0]) || $key[0] != '#';
+  return Element::child($key);
 }
 
 /**
@@ -4760,43 +4725,13 @@ function element_child($key) {
  *
  * @return
  *   The array keys of the element's children.
+ *
+ * @see \Drupal\Core\Render\Element::children()
+ *
+ * @deprecated as of Drupal 8.0. Use Element::children() instead.
  */
 function element_children(&$elements, $sort = FALSE) {
-  // Do not attempt to sort elements which have already been sorted.
-  $sort = isset($elements['#sorted']) ? !$elements['#sorted'] : $sort;
-
-  // Filter out properties from the element, leaving only children.
-  $children = array();
-  $sortable = FALSE;
-  foreach ($elements as $key => $value) {
-    if ($key === '' || $key[0] !== '#') {
-      if (is_array($value)) {
-        $children[$key] = $value;
-        if (isset($value['#weight'])) {
-          $sortable = TRUE;
-        }
-      }
-      // Only trigger an error if the value is not null.
-      // @see http://drupal.org/node/1283892
-      elseif (isset($value)) {
-        trigger_error(t('"@key" is an invalid render array key', array('@key' => $key)), E_USER_ERROR);
-      }
-    }
-  }
-  // Sort the children if necessary.
-  if ($sort && $sortable) {
-    uasort($children, 'element_sort');
-    // Put the sorted children back into $elements in the correct order, to
-    // preserve sorting if the same element is passed through
-    // element_children() twice.
-    foreach ($children as $key => $child) {
-      unset($elements[$key]);
-      $elements[$key] = $child;
-    }
-    $elements['#sorted'] = TRUE;
-  }
-
-  return array_keys($children);
+  return Element::children($elements, $sort);
 }
 
 /**
@@ -4807,27 +4742,13 @@ function element_children(&$elements, $sort = FALSE) {
  *
  * @return
  *   The array keys of the element's visible children.
+ *
+ * @see \Drupal\Core\Render\Element::getVisibleChildren()
+ *
+ * @deprecated as of Drupal 8.0. Use Element::getVisibleChildren() instead.
  */
 function element_get_visible_children(array $elements) {
-  $visible_children = array();
-
-  foreach (element_children($elements) as $key) {
-    $child = $elements[$key];
-
-    // Skip un-accessible children.
-    if (isset($child['#access']) && !$child['#access']) {
-      continue;
-    }
-
-    // Skip value and hidden elements, since they are not rendered.
-    if (isset($child['#type']) && in_array($child['#type'], array('value', 'hidden'))) {
-      continue;
-    }
-
-    $visible_children[$key] = $child;
-  }
-
-  return array_keys($visible_children);
+  return Element::getVisibleChildren($elements);
 }
 
 /**
@@ -4841,18 +4762,13 @@ function element_get_visible_children(array $elements) {
  *   array('#propertyname' => 'attributename'). If both names are identical
  *   except for the leading '#', then an attribute name value is sufficient and
  *   no property name needs to be specified.
+ *
+ * @see \Drupal\Core\Render\Element::setAttributes()
+ *
+ * @deprecated as of Drupal 8.0. Use Element::setAttributes() instead.
  */
 function element_set_attributes(array &$element, array $map) {
-  foreach ($map as $property => $attribute) {
-    // If the key is numeric, the attribute name needs to be taken over.
-    if (is_int($property)) {
-      $property = '#' . $attribute;
-    }
-    // Do not overwrite already existing attributes.
-    if (isset($element[$property]) && !isset($element['#attributes'][$attribute])) {
-      $element['#attributes'][$attribute] = $element[$property];
-    }
-  }
+  Element::setAttributes($element, $map);
 }
 
 /**

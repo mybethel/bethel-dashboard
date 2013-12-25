@@ -8,6 +8,7 @@
 namespace Drupal\link\Plugin\Field\FieldType;
 
 use Drupal\Core\Field\ConfigFieldItemBase;
+use Drupal\Core\TypedData\DataDefinition;
 use Drupal\field\FieldInterface;
 
 /**
@@ -38,18 +39,14 @@ class LinkItem extends ConfigFieldItemBase {
    */
   public function getPropertyDefinitions() {
     if (!isset(static::$propertyDefinitions)) {
-      static::$propertyDefinitions['url'] = array(
-        'type' => 'uri',
-        'label' => t('URL'),
-      );
-      static::$propertyDefinitions['title'] = array(
-        'type' => 'string',
-        'label' => t('Link text'),
-      );
-      static::$propertyDefinitions['attributes'] = array(
-        'type' => 'map',
-        'label' => t('Attributes'),
-      );
+      static::$propertyDefinitions['url'] = DataDefinition::create('uri')
+        ->setLabel(t('URL'));
+
+      static::$propertyDefinitions['title'] = DataDefinition::create('string')
+        ->setLabel(t('Link text'));
+
+      static::$propertyDefinitions['attributes'] = DataDefinition::create('map')
+        ->setLabel(t('Attributes'));
     }
     return static::$propertyDefinitions;
   }
@@ -107,7 +104,6 @@ class LinkItem extends ConfigFieldItemBase {
    * {@inheritdoc}
    */
   public function preSave() {
-    $item = $this->getValue();
     // Trim any spaces around the URL and link text.
     $this->url = trim($this->url);
     $this->title = trim($this->title);

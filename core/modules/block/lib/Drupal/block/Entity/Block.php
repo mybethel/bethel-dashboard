@@ -8,8 +8,6 @@
 namespace Drupal\block\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBase;
-use Drupal\Core\Entity\Annotation\EntityType;
-use Drupal\Core\Annotation\Translation;
 use Drupal\block\BlockPluginBag;
 use Drupal\block\BlockInterface;
 use Drupal\Core\Entity\EntityStorageControllerInterface;
@@ -121,7 +119,13 @@ class Block extends ConfigEntityBase implements BlockInterface {
    */
   public function label($langcode = NULL) {
     $settings = $this->get('settings');
-    return $settings['label'];
+    if ($settings['label']) {
+      return $settings['label'];
+    }
+    else {
+      $definition = $this->getPlugin()->getPluginDefinition();
+      return $definition['admin_label'];
+    }
   }
 
   /**

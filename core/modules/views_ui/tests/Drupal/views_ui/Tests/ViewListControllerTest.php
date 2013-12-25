@@ -77,7 +77,7 @@ class ViewListControllerTest extends UnitTestCase {
       array(array(), 'default', $display_manager->getDefinition('default'))
     );
     $route_provider = $this->getMock('Drupal\Core\Routing\RouteProviderInterface');
-    $state = $this->getMock('\Drupal\Core\KeyValueStore\KeyValueStoreInterface');
+    $state = $this->getMock('\Drupal\Core\KeyValueStore\StateInterface');
     $page_display = $this->getMock('Drupal\views\Plugin\views\display\Page',
       array('initDisplay', 'getPath'),
       array(array(), 'default', $display_manager->getDefinition('page'), $route_provider, $state)
@@ -114,7 +114,8 @@ class ViewListControllerTest extends UnitTestCase {
       )));
 
     $container = new ContainerBuilder();
-    $executable_factory = new ViewExecutableFactory();
+    $user = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $executable_factory = new ViewExecutableFactory($user);
     $container->set('views.executable', $executable_factory);
     $container->set('plugin.manager.views.display', $display_manager);
     $container->set('string_translation', $this->getStringTranslationStub());
