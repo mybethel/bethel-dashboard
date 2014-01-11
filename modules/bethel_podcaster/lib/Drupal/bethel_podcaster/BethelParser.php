@@ -7,38 +7,63 @@
 
 namespace Drupal\bethel_podcaster;
 
+require_once('/var/www/vendor/autoload.php');
+
+use Aws\S3\S3Client;
+
 class BethelParser {
 
-  private $domain;
+  private $user;
+  private $id;
+  private $s3;
   
   public $variables;
 
-  public function __construct($domain) {
-    $this->domain = $domain;
+  public function __construct($variables) {
+    $this->variables = $variables;
+    
+    $this->username = $variables['user'];
+    $this->id = $variables['id'];
+    
+    $this->s3 = S3Client::factory(array(
+      'key'    => $_ENV['S3']['key'],
+      'secret' => $_ENV['S3']['secret']
+    ));
+    
     $this->processBethelFeed();
   }
   
   private function processBethelFeed() {
-    $rawdata = file_get_contents($this->domain . '/bethel/podcaster.json');
-  
-    // Decode the JSON into an array for parsing.
-    $items = \Drupal\Component\Utility\Json::decode($rawdata);
     $config = \Drupal::config('bethel.podcaster');
-  
-    // Evaluate each video that Bethel returns.
-    foreach ($items['podcasts'] as $index => $item) {
-      //$durationformat = $video['duration'] < 3600 ? 'i:s' : 'H:i:s';
-      $this->variables['podcast'][$index]['title'] = htmlspecialchars($item['podcast']['title']);
-      $this->variables['podcast'][$index]['url'] = $item['podcast']['field_audio'];
-      $this->variables['podcast'][$index]['date'] = $item['podcast']['created'];
-      $this->variables['podcast'][$index]['description'] = $item['podcast']['body'];
+    
+    // Podcasts are stored in a bucket with the username and node ID.
+    $podcast_files = $this->s3->getIterator('ListObjects', array(
+      'Bucket' => 'bethel-podcaster',
+      'Prefix' => $this->username . '/' . $this->id . '/'
+    ));
+    
+    // Evaluate each video that is stored in Bethel.
+    foreach ($podcast_files as $index => $item) {
+      if ($item['Size'] <= 0)
+        continue;
+        
+      $date = $config->get('bethel.' . trim($item['ETag'], '"') . '.date') ?: date('r', strtotime($item['LastModified']));
+      $index = strtotime($date) . '.' . $index;
+      $filename = explode('/', $item['Key']);
+      $filename = $filename[sizeof($filename)-1];
+      $filepath = str_replace($filename, '', $item['Key']) . rawurlencode($filename);
+
+      $this->variables['podcast'][$index]['title'] = trim($item['ETag'], '"') . $config->get('bethel.' . trim($item['ETag'], '"') . '.title');
+      $this->variables['podcast'][$index]['url'] = 'http://bethel-podcaster.s3-website-us-east-1.amazonaws.com/' . $filepath;
+      $this->variables['podcast'][$index]['date'] = $date;
+      $this->variables['podcast'][$index]['description'] = htmlspecialchars($config->get('bethel.' . trim($item['ETag'], '"') . '.description'));
       $this->variables['podcast'][$index]['keywords'] = ''; //htmlspecialchars($video['tags']);
-      $this->variables['podcast'][$index]['length'] = ''; //$video['duration'];
-      $this->variables['podcast'][$index]['thumbnail'] = ''; //$video['thumbnail_small'];
-      $this->variables['podcast'][$index]['duration'] = ''; //date($durationformat, $video['duration']);
-      $this->variables['podcast'][$index]['resource']['url'] = $item['podcast']['field_audio'];
-      $this->variables['podcast'][$index]['resource']['size'] = $item['podcast']['filesize'];
+      $this->variables['podcast'][$index]['duration'] = $config->get('bethel.' . trim($item['ETag'], '"') . '.duration');
+      $this->variables['podcast'][$index]['resource']['url'] = 'http://bethel-podcaster.s3-website-us-east-1.amazonaws.com/' . $filepath;
+      $this->variables['podcast'][$index]['resource']['size'] = $item['Size'];
       $this->variables['podcast'][$index]['resource']['type'] = 'audio/mp3';
     }
+    
+    krsort($this->variables['podcast']);
   }
 }

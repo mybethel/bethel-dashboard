@@ -190,8 +190,10 @@ class PodcasterController implements ContainerInjectionInterface {
     }
     
     global $base_url;
+    global $user;
+    
     $author = user_load($node->getValue()['uid'][0]['target_id']);
-    $image = entity_load('file', $node->getValue()['field_image'][0]['target_id']);
+    $image = ($node->getValue()['field_image'][0]) ? entity_load('file', $node->getValue()['field_image'][0]['target_id']) : '';
     
     // Build the Podcast information from the Node.
     $podcast = array();
@@ -203,7 +205,7 @@ class PodcasterController implements ContainerInjectionInterface {
     $podcast['author'] = $author->user_name->value;
     $podcast['author_email'] = $author->mail->value;
     $podcast['feed'] = $base_url . '/' . node_uri($node)['path'] . '/podcast.xml';
-    $podcast['image'] = file_create_url($image->uri->value);
+    $podcast['image'] = ($image) ? file_create_url($image->uri->value) : '';
     $podcast['copyright'] = $node->field_copyright->value;
     
     $vimeo_username = $node->field_vimeo->value;
@@ -214,7 +216,7 @@ class PodcasterController implements ContainerInjectionInterface {
       $podcast['items'] = $vimeo->variables['videos'];
       $podcast['type'] = 'video';
     } else {
-      $bethel = new BethelParser('http://coastal.getbethel.com');
+      $bethel = new BethelParser(array('id' => $node->id(), 'user' => $node->getAuthor()->getValue()['name'][0]['value']));
       $podcast['items'] = $bethel->variables['podcast'];
       $podcast['type'] = 'video';
     }

@@ -27,14 +27,16 @@
   <item>
     <title>{{ item.title }}</title>
     <pubDate>{{ item.date }}</pubDate>
-    <guid isPermaLink="false">{{ item.link }}</guid>
+    <guid isPermaLink="false">{{ item.resource.url }}</guid>
     <itunes:author>{{ author }}</itunes:author>
     <description>{{ item.description }}</description>
     <itunes:summary>{{ item.description }}</itunes:summary>
     <itunes:duration>{{ item.duration }}</itunes:duration>
     <itunes:explicit>no</itunes:explicit>
     <itunes:keywords>{{ item.keywords }}</itunes:keywords>
+{% if item.image %}
     <itunes:image href="{{ item.image }}" />
+{% endif %}
     <enclosure url="{{ item.resource.url }}" length="{{ item.resource.size }}" type="{{ item.resource.type }}" />
     <itunes:block>no</itunes:block>
   </item>
