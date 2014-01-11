@@ -1,3 +1,6 @@
 
 *.DS_Store
+composer.phar
+modules/bethel_podcaster/composer.lock
 sites/*/settings.php
+vendor/*
