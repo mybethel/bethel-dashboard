@@ -3,7 +3,7 @@ uuid: 38fcdfbf-92a0-43d3-af30-8395cba668d4
 name: Podcast
 description: 'Content type for Podcaster structure.'
 help: ''
-has_title: '1'
+has_title: true
 title_label: Title
 settings:
   node:
@@ -13,6 +13,6 @@ settings:
       promote: promote
       sticky: '0'
       revision: '0'
-    submitted: '1'
-status: '1'
+    submitted: true
+status: true
 langcode: en

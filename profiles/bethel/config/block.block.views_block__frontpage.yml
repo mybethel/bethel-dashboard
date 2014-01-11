@@ -1,12 +1,13 @@
 id: views_block__frontpage
-uuid: cbb431c7-ca29-4a19-b200-a4b721677c89
-weight: '-1'
+uuid: 8695694f-9467-4076-8602-2a275c80b9b2
+weight: -1
 status: true
 langcode: en
 theme: podcaster
 region: content
 plugin: 'views_block:frontpage_block-block_1'
 settings:
+  views_label: ''
   items_per_page: none
   label: ''
   module: views
@@ -14,12 +15,12 @@ settings:
   cache: -1
 visibility:
   path:
-    visibility: '1'
+    visibility: 1
     pages: 'user/*'
   role:
     roles: {  }
   node_type:
     types:
-      locations: 0
-      podcast: 0
+      locations: '0'
+      podcast: '0'
   visibility__active_tab: edit-visibility-path

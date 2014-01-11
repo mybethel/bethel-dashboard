@@ -1,6 +1,6 @@
-name: Podcaster
+name: Bethel Dashboard
 type: profile
-description: 'Installation profile for Bethel Podcaster.'
+description: 'Installation profile for my.bethel.io.'
 version: Beta
 core: 8.x
 dependencies:
@@ -28,7 +28,6 @@ dependencies:
   - path
   - taxonomy
   - toolbar
-  - overlay
   - field_ui
   - file
   - rdf

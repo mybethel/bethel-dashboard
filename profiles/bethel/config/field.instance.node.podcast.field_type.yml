@@ -7,8 +7,9 @@ entity_type: node
 bundle: podcast
 label: Source
 description: 'Select where the podcast feed will originate.'
-required: 1
+required: true
 default_value: {  }
 default_value_function: ''
 settings: {  }
 field_type: list_text
+field_name: field_type

@@ -7,10 +7,11 @@ entity_type: node
 bundle: podcast
 label: Description
 description: ''
-required: 0
+required: false
 default_value: {  }
 default_value_function: ''
 settings:
-  text_processing: '0'
-  display_summary: 1
+  text_processing: false
+  display_summary: true
 field_type: text_with_summary
+field_name: body

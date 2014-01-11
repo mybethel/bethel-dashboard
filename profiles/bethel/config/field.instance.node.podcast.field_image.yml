@@ -7,7 +7,7 @@ entity_type: node
 bundle: podcast
 label: 'Cover Art'
 description: 'Square cover image for iTunes.  Any image uploaded will be automatically resized to 1400x1400 pixels.'
-required: 0
+required: false
 default_value: {  }
 default_value_function: ''
 settings:
@@ -16,10 +16,10 @@ settings:
   max_filesize: ''
   max_resolution: ''
   min_resolution: ''
-  alt_field: 0
-  alt_field_required: 0
-  title_field: 0
-  title_field_required: 0
+  alt_field: false
+  alt_field_required: false
+  title_field: false
+  title_field_required: false
   default_image:
     fid: null
     alt: ''
@@ -27,3 +27,4 @@ settings:
     width: null
     height: null
 field_type: image
+field_name: field_image

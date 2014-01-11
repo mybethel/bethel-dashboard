@@ -24,9 +24,9 @@ function bethel_install() {
   // Set front page to "user".
   \Drupal::config('system.site')->set('page.front', 'user')->save();
 
-  // Allow visitor account creation with administrative approval.
+  // Allow visitor account creation with administrative approval.  
   $user_settings = \Drupal::config('user.settings');
-  $user_settings->set('register', USER_REGISTER_ADMINISTRATORS_ONLY)->save();
+  $user_settings->set('register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL)->save();
   
   // Create user picture field.
   module_load_install('user');
@@ -43,7 +43,7 @@ function bethel_install() {
   file_copy($default_pic, 'public://default_images/', FILE_EXISTS_REPLACE);
   
   $file = new stdClass();
-  $file->uri = drupal_get_path('profile', 'bethel') . '/images/podcast-default.jpg';
+  $file->uri = drupal_get_path('profile', 'bethel') . '/images/podcast-default.png';
   $file->filename = drupal_basename($file->uri);
   $file->filemime = file_get_mimetype($file->uri);
   $file->uid = 1;

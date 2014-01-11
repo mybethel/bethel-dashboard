@@ -10,5 +10,6 @@ required: false
 default_value: {  }
 default_value_function: ''
 settings: {  }
-status: 1
+status: true
 langcode: und
+field_type: taxonomy_term_reference

@@ -70,7 +70,8 @@ function retrieve_remote_file_size($url) {
 function template_preprocess_video_wrapper(&$variables) {
   $vimeo = new Drupal\bethel_podcaster\VimeoParser($variables);
   $variables = $vimeo->variables;
-  $variables['edit_access'] = node_access('update', $variables['content']['#node']);
+  
+  $variables['edit_access'] = $variables['content']['#node']->access('update');
 }
 
 function bethel_podcaster_video_form($form, &$form_state, $id) {
