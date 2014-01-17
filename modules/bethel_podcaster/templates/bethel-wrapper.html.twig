@@ -1,11 +1,11 @@
 <div id="bethel_wrapper">
-{% for id, item in podcast %}
+{% for item in podcast %}
   <div class="media">
     {% if edit_access %}
-      <a href="/podcaster/{{ id }}/edit" class="btn btn-danger btn-sm pull-right">Delete</a><a href="/podcaster/{{ id }}/delete" class="btn btn-default btn-sm pull-right">Edit</a>
+      <a href="/podcaster/{{ nid }}/{{ item.uuid }}/delete" class="btn btn-danger btn-sm pull-right">Delete</a><a href="/podcaster/{{ nid }}/{{ item.uuid }}/edit" class="btn btn-default btn-sm pull-right">Edit</a>
     {% endif %}
     <div class="media-body">
-      <h4 class="media-heading">{{ item.title }} <span class="badge">{{ item.duration }}</span></h4>
+      <h4 class="media-heading"><a href="{{ item.url }}">{{ item.title }}</a> <span class="badge">{{ item.duration }}</span></h4>
       <p class="text-muted">
       {% if item.description %}
         {{ item.description }}

@@ -11,7 +11,15 @@ bethel_podcaster.podcast_admin:
     _controller: '\Drupal\bethel_podcaster\PodcasterController::podcast_admin'
   requirements:
     _access: 'TRUE'
-    
+
+bethel_podcaster.podcast_item_edit:
+  path: 'podcaster/{node}/{id}/edit'
+  defaults:
+    _title: 'Edit Podcast Item'
+    _form: '\Drupal\bethel_podcaster\Form\PodcastItemEdit'
+  requirements:
+    _access: 'TRUE'
+
 bethel_podcaster.analytics_connect:
   path: 'podcaster/analytics/connect'
   defaults:

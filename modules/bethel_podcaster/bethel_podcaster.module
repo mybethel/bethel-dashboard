@@ -92,6 +92,7 @@ function template_preprocess_video_wrapper(&$variables) {
 function template_preprocess_bethel_wrapper(&$variables) {
   $parse = new Drupal\bethel_podcaster\BethelParser(array('id' => $variables['content']['#node']->id(), 'user' => $variables['content']['#node']->getAuthor()->getValue()['name'][0]['value']));
   
+  $variables['nid'] = $variables['content']['#node']->id();
   $variables['podcast'] = $parse->variables['podcast'];
   $variables['edit_access'] = $variables['content']['#node']->access('update');
 }
