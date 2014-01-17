@@ -53,7 +53,7 @@ class BethelParser {
       $filename = $filename[sizeof($filename)-1];
       $filepath = str_replace($filename, '', $item['Key']) . rawurlencode($filename);
 
-      $this->variables['podcast'][$index]['title'] = trim($item['ETag'], '"') . htmlspecialchars($config->get('bethel.' . trim($item['ETag'], '"') . '.title'));
+      $this->variables['podcast'][$index]['title'] = htmlspecialchars($config->get('bethel.' . trim($item['ETag'], '"') . '.title'));
       $this->variables['podcast'][$index]['url'] = 'http://bethel-podcaster.s3-website-us-east-1.amazonaws.com/' . $filepath;
       $this->variables['podcast'][$index]['date'] = $date;
       $this->variables['podcast'][$index]['description'] = htmlspecialchars($config->get('bethel.' . trim($item['ETag'], '"') . '.description'));
