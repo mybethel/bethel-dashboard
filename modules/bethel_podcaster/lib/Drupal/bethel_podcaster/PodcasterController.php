@@ -161,16 +161,19 @@ class PodcasterController implements ContainerInjectionInterface {
   private function analyticsConfirmToken() {
     $config = \Drupal::config('bethel.gapi');
     $access_token = $config->get('access_token');
-    
+
     if ($access_token) {
       $this->analytics->setAccessToken($access_token);
     }
-    
-    if ($this->analytics->isAccessTokenExpired() && $credentials['refresh_token']) {
+
+    if ($this->analytics->isAccessTokenExpired()) {
       $credentials = \Drupal\Component\Utility\Json::decode($access_token);
-      $this->analytics->refreshToken($credentials['refresh_token']);
-    } else {
-      print $this->analytics->createAuthUrl();
+
+      if ($credentials['refresh_token']) {
+        $this->analytics->refreshToken($credentials['refresh_token']);
+      } else {
+        print $this->analytics->createAuthUrl();
+      }
     }
   }
 
