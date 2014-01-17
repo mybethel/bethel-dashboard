@@ -1,6 +1,9 @@
 <div id="bethel_wrapper">
-{% for item in podcast %}
+{% for id, item in podcast %}
   <div class="media">
+    {% if edit_access %}
+      <a href="/podcaster/{{ id }}/edit" class="btn btn-danger btn-sm pull-right">Delete</a><a href="/podcaster/{{ id }}/delete" class="btn btn-default btn-sm pull-right">Edit</a>
+    {% endif %}
     <div class="media-body">
       <h4 class="media-heading">{{ item.title }} <span class="badge">{{ item.duration }}</span></h4>
       <p class="text-muted">
@@ -12,8 +15,5 @@
       </p>
     </div>
   </div>
-  {% if video.form and edit_access %}
-  {{ video.form }}
-  {% endif %}
 {% endfor %}
 </div>
