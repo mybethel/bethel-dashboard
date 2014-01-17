@@ -1,0 +1,19 @@
+<div id="bethel_wrapper">
+{% for item in podcast %}
+  <div class="media">
+    <div class="media-body">
+      <h4 class="media-heading">{{ item.title }} <span class="badge">{{ item.duration }}</span></h4>
+      <p class="text-muted">
+      {% if item.description %}
+        {{ item.description }}
+      {% elseif edit_access %}
+        Podcaster recommends adding a short description for each item in your podcast.  To do this, edit the video on Vimeo and add a description.  This message is not shown to your visitors.
+      {% endif %}
+      </p>
+    </div>
+  </div>
+  {% if video.form and edit_access %}
+  {{ video.form }}
+  {% endif %}
+{% endfor %}
+</div>
