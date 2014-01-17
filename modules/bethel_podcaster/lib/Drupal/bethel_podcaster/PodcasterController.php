@@ -98,7 +98,7 @@ class PodcasterController implements ContainerInjectionInterface {
         array('data' => l($podcast->getTitle(), '/node/' . $podcast->id()), 'class' => 'title'),
         array('data' => $podcast->get('field_type')->value, 'class' => 'type'),
         array('data' => '<span data-toggle="tooltip" data-placement="bottom" title="The average number of daily subscribers over the past 7 days.">' . $this->getSubscribers($podcast->id()) . '</span>', 'class' => 'subscribers'),
-        array('data' => l('Edit', '/node/' . $podcast->id() . '/edit', array('attributes' => array('class' => array('btn', 'btn-default', 'btn-sm')))) . ' ' . l('Delete', '/node/' . $podcast->id() . '/delete', array('attributes' => array('class' => array('btn', 'btn-danger', 'btn-sm')))), 'class' => 'operations'),
+        array('data' => l('Manage', '/node/' . $podcast->id(), array('attributes' => array('class' => array('btn', 'btn-default', 'btn-sm')))) . ' ' . l('Delete', '/node/' . $podcast->id() . '/delete', array('attributes' => array('class' => array('btn', 'btn-danger', 'btn-sm')))), 'class' => 'operations'),
       );
     }
     
