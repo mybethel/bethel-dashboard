@@ -20,6 +20,10 @@ function bethel_podcaster_theme() {
       'template' => 'video-wrapper',
       'render element' => 'content',
     ),
+    'bethel_wrapper' => array(
+      'template' => 'bethel-wrapper',
+      'render element' => 'content',
+    ),
   );
 }
 
@@ -38,6 +42,12 @@ function bethel_podcaster_node_view($node, $display, $view_mode, $langcode) {
         '#node' => $node,
         '#filtered' => $node->getValue()['field_tags'],
         '#videofeed' => 'hbcoakville',
+        '#weight' => '100',
+      );
+    } else if ($node->getValue()['field_type'][0]['value'] == 'Bethel') {
+      $node->content['podcast_contents'] = array(
+        '#theme' => 'bethel_wrapper',
+        '#node' => $node,
         '#weight' => '100',
       );
     }
@@ -71,6 +81,18 @@ function template_preprocess_video_wrapper(&$variables) {
   $vimeo = new Drupal\bethel_podcaster\VimeoParser($variables);
   $variables = $vimeo->variables;
   
+  $variables['edit_access'] = $variables['content']['#node']->access('update');
+}
+
+/**
+ * Prepares variables for Bethel hosted podcast wrapper templates.
+ *
+ * Default template: bethel-wrapper.html.twig.
+ */
+function template_preprocess_bethel_wrapper(&$variables) {
+  $parse = new Drupal\bethel_podcaster\BethelParser(array('id' => $variables['content']['#node']->id(), 'user' => $variables['content']['#node']->getAuthor()->getValue()['name'][0]['value']));
+  
+  $variables['podcast'] = $parse->variables['podcast'];
   $variables['edit_access'] = $variables['content']['#node']->access('update');
 }
 

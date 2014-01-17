@@ -208,7 +208,8 @@ body.toolbar-tray-open #sidebar-first { top: 129px; }
   font-size: 12px;
 }
 
-#video_wrapper {
+#video_wrapper,
+#bethel_wrapper {
   clear: both;
   margin-top: 20px;
 }
