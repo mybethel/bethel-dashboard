@@ -31,7 +31,7 @@ class PodcasterController implements ContainerInjectionInterface {
    * @var \Drupal\Core\Config\Config
    */
   protected $config;
-  
+
   protected $googleAccessToken;
   protected $analytics;
 
@@ -44,7 +44,7 @@ class PodcasterController implements ContainerInjectionInterface {
   public function __construct(Config $config) {
     require_once DRUPAL_ROOT . '/libraries/google-api-php-client/src/Google_Client.php';
     require_once DRUPAL_ROOT . '/libraries/google-api-php-client/src/contrib/Google_AnalyticsService.php';
-    
+
     $this->analytics = new \Google_Client();
     $this->analytics->setApplicationName('Bethel');
     $this->analytics->setClientId($_ENV['GoogleAnalytics']['id']);
@@ -52,15 +52,15 @@ class PodcasterController implements ContainerInjectionInterface {
     $this->analytics->setRedirectUri('http://my.bethel.io/podcaster/analytics/connect');
     $this->analytics->setDeveloperKey($_ENV['GoogleAnalytics']['key']);
     $this->analytics->setScopes(array('https://www.googleapis.com/auth/analytics.readonly'));
-    $this->analytics->setUseObjects(true);
-    
+    $this->analytics->setUseObjects(TRUE);
+
     if (isset($_SESSION['token'])) {
       $this->analytics->setAccessToken($_SESSION['token']);
     }
-    
+
     $this->config = $config;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -69,7 +69,7 @@ class PodcasterController implements ContainerInjectionInterface {
       $container->get('config.factory')->get('bethel.podcaster')
     );
   }
-  
+
   public function podcast_admin() {
     global $user;
 
@@ -80,28 +80,50 @@ class PodcasterController implements ContainerInjectionInterface {
       array('data' => 'Subscribers', 'class' => array('subscribers', 'text-muted')),
       '',
     );
-    
+
     $podcast_row = array();
-    
+
     $query = \Drupal::entityQuery('node');
     $result = $query
       ->condition('type', 'podcast')
       ->condition('uid', $user->id())
       ->execute();
-    
+
     $podcasts = entity_load_multiple('node', $result);
-    
+
     foreach ($podcasts as $podcast) {
       $podcast_image = field_view_field($podcast, 'field_image', 'teaser');
       $podcast_row[] = array(
         array('data' => drupal_render($podcast_image), 'class' => 'thumb'),
         array('data' => l($podcast->getTitle(), '/node/' . $podcast->id()), 'class' => 'title'),
         array('data' => $podcast->get('field_type')->value, 'class' => 'type'),
-        array('data' => '<span data-toggle="tooltip" data-placement="bottom" title="The average number of daily subscribers over the past 7 days.">' . $this->getSubscribers($podcast->id()) . '</span>', 'class' => 'subscribers'),
-        array('data' => l('Manage', '/node/' . $podcast->id(), array('attributes' => array('class' => array('btn', 'btn-default', 'btn-sm')))) . ' ' . l('Delete', '/node/' . $podcast->id() . '/delete', array('attributes' => array('class' => array('btn', 'btn-danger', 'btn-sm')))), 'class' => 'operations'),
+        array(
+          'data' => '<span data-toggle="tooltip" data-placement="bottom" title="The average number of daily subscribers over the past 7 days.">' . $this->getSubscribers($podcast->id()) . '</span>',
+          'class' => 'subscribers',
+        ),
+        array(
+          'data' => l('Manage', '/node/' . $podcast->id(), array(
+                'attributes' => array(
+                  'class' => array(
+                    'btn',
+                    'btn-default',
+                    'btn-sm',
+                  )
+                )
+              )) . ' ' . l('Delete', '/node/' . $podcast->id() . '/delete', array(
+                'attributes' => array(
+                  'class' => array(
+                    'btn',
+                    'btn-danger',
+                    'btn-sm',
+                  )
+                )
+              )),
+          'class' => 'operations',
+        ),
       );
     }
-    
+
     $podcast_table = array(
       'header' => $podcast_header,
       'rows' => $podcast_row,
@@ -112,24 +134,34 @@ class PodcasterController implements ContainerInjectionInterface {
       'colgroups' => NULL,
       'responsive' => TRUE,
     );
-    
+
     drupal_set_title('My Podcasts');
-    
+
     drupal_add_js('jQuery(document).ready(function () { jQuery("td.subscribers span").tooltip() });', 'inline');
 
-    return l('New Podcast', '/node/add/podcast', array('attributes' => array('class' => array('add-btn', 'btn', 'btn-primary', 'pull-right')))) . theme_table($podcast_table);
+    return l('New Podcast', '/node/add/podcast', array(
+      'attributes' => array(
+        'class' => array(
+          'add-btn',
+          'btn',
+          'btn-primary',
+          'pull-right',
+        )
+      )
+    )) . theme_table($podcast_table);
   }
-  
+
   public function getSubscribers($node) {
     $cache = cache('bethel.podcaster');
     $subscribers = $cache->get('subscribers_' . $node);
 
     if (!$subscribers) {
       $this->analyticsConfirmToken();
-      
+
       if (!$this->analytics->getAccessToken()) {
         print $this->analytics->createAuthUrl();
-      } else {
+      }
+      else {
         $analytics = new \Google_AnalyticsService($this->analytics);
         $visits = $analytics->data_ga->get(
           'ga:79242714',
@@ -137,27 +169,28 @@ class PodcasterController implements ContainerInjectionInterface {
           date('Y-m-d'),
           'ga:pageviews',
           array('dimensions' => 'ga:pagePath', 'filters' => 'ga:pagePath==/node/' . $node . '/podcast.xml'));
-        
-        $subscribers = round($visits->getRows()[0][1]/7);
-        $cache->set('subscribers_' . $node, $subscribers, time()+(24*60*60));
-      }  
-    } else {
+
+        $subscribers = round($visits->getRows()[0][1] / 7);
+        $cache->set('subscribers_' . $node, $subscribers, time() + (24 * 60 * 60));
+      }
+    }
+    else {
       $subscribers = $subscribers->data;
     }
-    
+
     return $subscribers;
   }
-  
+
   public function analyticsConnect() {
     $this->analytics->authenticate();
     $access_token = $this->analytics->getAccessToken();
-    
+
     $config = \Drupal::config('bethel.gapi');
     $config->set('access_token', $access_token)->save();
-    
-    return new RedirectResponse(\Drupal::url('bethel_podcaster.podcast_admin'));; 
+
+    return new RedirectResponse(\Drupal::url('bethel_podcaster.podcast_admin'));
   }
-  
+
   private function analyticsConfirmToken() {
     $config = \Drupal::config('bethel.gapi');
     $access_token = $config->get('access_token');
@@ -167,11 +200,12 @@ class PodcasterController implements ContainerInjectionInterface {
     }
 
     if ($this->analytics->isAccessTokenExpired()) {
-      $credentials = \Drupal\Component\Utility\Json::decode($access_token);
+      $credentials = Json::decode($access_token);
 
       if ($credentials['refresh_token']) {
         $this->analytics->refreshToken($credentials['refresh_token']);
-      } else {
+      }
+      else {
         print $this->analytics->createAuthUrl();
       }
     }
@@ -183,24 +217,27 @@ class PodcasterController implements ContainerInjectionInterface {
    * @param integer $id
    *   The node ID to built a podcast for.
    *
-   * @return
+   * @return \Symfony\Component\HttpFoundation\Response
    *   The podcast feed in XML optimized for iTunes.
+   *
+   * @throws \Symfony\Component\HttpKernel\Exception\NotFoundHttpException
+   *   If the node ID is invalid or not found.
    */
-  public function podcast_feed($id) {    
+  public function podcast_feed($id) {
     // Validate the widget is valid, and the node ID is an actual node.
     if (!is_numeric($id) || !$node = node_load($id)) {
       throw new NotFoundHttpException();
     }
-    
+
     global $base_url;
     global $user;
-    
+
     $author = user_load($node->getValue()['uid'][0]['target_id']);
     $image = ($node->getValue()['field_image'][0]) ? entity_load('file', $node->getValue()['field_image'][0]['target_id']) : '';
-    
+
     // Build the Podcast information from the Node.
     $podcast = array();
-    
+
     $podcast['title'] = $node->title->value;
     $podcast['description'] = $node->body->value;
     $podcast['short_description'] = $node->body->summary;
@@ -210,28 +247,32 @@ class PodcasterController implements ContainerInjectionInterface {
     $podcast['feed'] = $base_url . '/' . node_uri($node)['path'] . '/podcast.xml';
     $podcast['image'] = ($image) ? file_create_url($image->uri->value) : '';
     $podcast['copyright'] = $node->field_copyright->value;
-    
+
     $vimeo_username = $node->field_vimeo->value;
-    
+
     if ($node->field_type->value == "Vimeo") {
       $tags = $node->field_tags->getValue();
       $vimeo = new VimeoParser(array('content' => array('#videofeed' => $vimeo_username, '#filtered' => $tags)));
       $podcast['items'] = $vimeo->variables['videos'];
       $podcast['type'] = 'video';
-    } else {
-      $bethel = new BethelParser(array('id' => $node->id(), 'user' => $node->getAuthor()->getValue()['name'][0]['value']));
+    }
+    else {
+      $bethel = new BethelParser(array(
+        'id' => $node->id(),
+        'user' => $node->getAuthor()->getValue()['name'][0]['value']
+      ));
       $podcast['items'] = $bethel->variables['podcast'];
       $podcast['type'] = 'video';
     }
 
     // Build the XML file from the template.
     $podcast_xml = twig_render_template(drupal_get_path('module', 'bethel_podcaster') . '/templates/' . $podcast['type'] . '-podcast.html.twig', $podcast);
-    
+
     $headers = array(
       'Content-Length' => strlen($podcast_xml),
       'Content-Type' => 'text/xml'
     );
-    
+
     // Track the podcast load.
     new BethelAPITracking(array(
       'title' => $node->title->value . ' (Podcast Feed)',

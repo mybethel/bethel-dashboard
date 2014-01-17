@@ -19,7 +19,7 @@ class PodcastItemEdit extends ConfigFormBase {
    * @var \Drupal\Core\Config\ConfigFactory
    */
   protected $configFactory;
-  
+
   private $podcastID;
   private $podcastItemUUID;
 
@@ -42,7 +42,7 @@ class PodcastItemEdit extends ConfigFormBase {
   public function buildForm(array $form, array &$form_state) {
     $config = \Drupal::config('bethel.podcaster');
     $podcast_item = $config->get('bethel.' . $this->podcastItemUUID);
-    
+
     $form['title'] = array(
       '#type' => 'textfield',
       '#title' => t('Title'),
@@ -72,14 +72,14 @@ class PodcastItemEdit extends ConfigFormBase {
    */
   public function submitForm(array &$form, array &$form_state) {
     $config = \Drupal::config('bethel.podcaster');
-  
+
     $config->set('bethel.' . $this->podcastItemUUID . '.title', $form_state['values']['title'])->save();
     $config->set('bethel.' . $this->podcastItemUUID . '.date', $form_state['values']['date'])->save();
     $config->set('bethel.' . $this->podcastItemUUID . '.description', $form_state['values']['description'])->save();
     $config->set('bethel.' . $this->podcastItemUUID . '.duration', $form_state['values']['duration'])->save();
-    
+
     drupal_set_message(t('Saved podcast item ' . $form_state['values']['title'] . '. Your changes may take 24 hours to reflect in iTunes.'), 'status');
-    
+
     $response = new RedirectResponse(url('node/' . $this->podcastID));
     $response->send();
   }
