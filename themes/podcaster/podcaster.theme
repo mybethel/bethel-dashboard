@@ -210,7 +210,7 @@ function podcaster_menu_local_tasks_alter(&$data, $route_name) {
       $title = $data['tabs'][0][$path]['#link']['title'];
   
       if ($title == "View") {
-        $data['tabs'][0][$path]['#link']['title'] = "My Podcasts";
+        $data['tabs'][0][$path]['#link']['title'] = "My Dashboard";
       } else if ($title == "Edit") {
         $data['tabs'][0][$path]['#link']['title'] = "Edit Account";
       }
