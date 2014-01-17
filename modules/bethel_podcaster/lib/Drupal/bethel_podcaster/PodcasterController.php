@@ -47,10 +47,10 @@ class PodcasterController implements ContainerInjectionInterface {
     
     $this->analytics = new \Google_Client();
     $this->analytics->setApplicationName('Bethel');
-    $this->analytics->setClientId('484936756559-42lia9gv6vcerodshrgo5i9tm0qtm553.apps.googleusercontent.com');
-    $this->analytics->setClientSecret('_ADCIOcQ8wIq1tKnyIVWfnP3');
+    $this->analytics->setClientId($_ENV['GoogleAnalytics']['id']);
+    $this->analytics->setClientSecret($_ENV['GoogleAnalytics']['secret']);
     $this->analytics->setRedirectUri('http://my.bethel.io/podcaster/analytics/connect');
-    $this->analytics->setDeveloperKey('AIzaSyCud0FIGPFdBIe5wafzmG4hMHFfGx8187M');
+    $this->analytics->setDeveloperKey($_ENV['GoogleAnalytics']['key']);
     $this->analytics->setScopes(array('https://www.googleapis.com/auth/analytics.readonly'));
     $this->analytics->setUseObjects(true);
     
