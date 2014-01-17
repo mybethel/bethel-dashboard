@@ -1,4 +1,17 @@
 <div id="bethel_wrapper">
+{% if edit_access %}
+  <form action="https://bethel-podcaster.s3.amazonaws.com/" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="key" value="{{ uid }}/{{ nid }}/${filename}" />
+    <input type="hidden" name="AWSAccessKeyId" value="AKIAIJTWZVKSK76KBTHQ" /> 
+    <input type="hidden" name="acl" value="public-read" /> 
+    <input type="hidden" name="success_action_redirect" value="http://my.bethel.io/node/{{ nid }}" />
+    <input type="hidden" name="policy" value="{{ s3.policy }}" />
+    <input type="hidden" name="signature" value="{{ s3.signature }}" />
+    <input type="hidden" name="Content-Type" value="audio/mp3" />
+    <h3>Add a new Podcast item:</h3>
+    <input name="file" type="file" class="pull-left" /> <input type="submit" value="Upload" class="btn btn-primary btn-sm" />
+  </form>
+{% endif %}
 {% for item in podcast %}
   <div class="media">
     {% if edit_access %}

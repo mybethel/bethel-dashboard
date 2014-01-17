@@ -18,6 +18,9 @@ class BethelParser {
   private $s3;
   
   public $variables;
+  
+  public $policy;
+  public $signature;
 
   public function __construct($variables) {
     $this->variables = $variables;
@@ -29,6 +32,11 @@ class BethelParser {
       'key'    => $_ENV['S3']['key'],
       'secret' => $_ENV['S3']['secret']
     ));
+    
+    $policy_json = '{"expiration": "2014-12-31T00:00:00Z","conditions": [ {"bucket": "bethel-podcaster"}, ["starts-with", "$key", "' . $this->username . '/' . $this->id . '"],{"acl": "public-read"},{"success_action_redirect": "http://my.bethel.io/node/' . $this->id . '"},["starts-with", "$Content-Type", "audio/"]]}';
+    
+    $this->policy = base64_encode($policy_json);
+	  $this->signature = base64_encode(hash_hmac('sha1', $this->policy, $_ENV['S3']['secret'], true));
     
     $this->processBethelFeed();
   }
@@ -52,9 +60,11 @@ class BethelParser {
       $filename = explode('/', $item['Key']);
       $filename = $filename[sizeof($filename)-1];
       $filepath = str_replace($filename, '', $item['Key']) . rawurlencode($filename);
+      
+      $title = ($config->get('bethel.' . trim($item['ETag'], '"') . '.title')) ?: $filename;
 
       $this->variables['podcast'][$index]['uuid'] = trim($item['ETag'], '"');
-      $this->variables['podcast'][$index]['title'] = htmlspecialchars($config->get('bethel.' . trim($item['ETag'], '"') . '.title'));
+      $this->variables['podcast'][$index]['title'] = htmlspecialchars($title);
       $this->variables['podcast'][$index]['url'] = 'http://bethel-podcaster.s3-website-us-east-1.amazonaws.com/' . $filepath;
       $this->variables['podcast'][$index]['date'] = $date;
       $this->variables['podcast'][$index]['description'] = htmlspecialchars($config->get('bethel.' . trim($item['ETag'], '"') . '.description'));
