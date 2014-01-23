@@ -7,6 +7,8 @@
 
 namespace Drupal\bethel_podcaster;
 
+use \Drupal\Component\Utility\Json;
+
 class VimeoParser {
 
   private $username;
