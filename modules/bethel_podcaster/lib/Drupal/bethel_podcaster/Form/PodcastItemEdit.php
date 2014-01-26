@@ -10,6 +10,7 @@ namespace Drupal\bethel_podcaster\Form;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Form\ConfigFormBase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Guzzle\Http\Client;
 
 class PodcastItemEdit extends ConfigFormBase {
 
@@ -40,28 +41,29 @@ class PodcastItemEdit extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, array &$form_state) {
-    $config = \Drupal::config('bethel.podcaster');
-    $podcast_item = $config->get('bethel.' . $this->podcastItemUUID);
+    $api_client = new Client('http://api.bethel.io');
+    $request = $api_client->get('podcast/' . $this->podcastItemUUID);
+    $podcast_item = $request->send()->json();
 
     $form['title'] = array(
       '#type' => 'textfield',
       '#title' => t('Title'),
-      '#default_value' => $config->get('bethel.' . $this->podcastItemUUID . '.title'),
+      '#default_value' => $podcast_item['title'],
     );
     $form['date'] = array(
       '#type' => 'textfield',
       '#title' => t('Date'),
-      '#default_value' => $config->get('bethel.' . $this->podcastItemUUID . '.date'),
+      '#default_value' => $podcast_item['date'],
     );
     $form['description'] = array(
       '#type' => 'textarea',
       '#title' => t('Description'),
-      '#default_value' => $config->get('bethel.' . $this->podcastItemUUID . '.description'),
+      '#default_value' => $podcast_item['description'],
     );
     $form['duration'] = array(
       '#type' => 'textfield',
       '#title' => t('Duration'),
-      '#default_value' => $config->get('bethel.' . $this->podcastItemUUID . '.duration'),
+      '#default_value' => $podcast_item['duration'],
     );
 
     return parent::buildForm($form, $form_state);
@@ -70,13 +72,18 @@ class PodcastItemEdit extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
-    $config = \Drupal::config('bethel.podcaster');
+  public function submitForm(array &$form, array &$form_state) {    
+    $client = new Client('http://api.bethel.io/');
+    $request = $client->post('podcast', null, array(
+      'mediaId' => $this->podcastItemUUID,
+      'title' => $form_state['values']['title'],
+      'date' => $form_state['values']['date'],
+      'description' => $form_state['values']['description'],
+      'duration' => $form_state['values']['duration'],
+    ));
 
-    $config->set('bethel.' . $this->podcastItemUUID . '.title', $form_state['values']['title'])->save();
-    $config->set('bethel.' . $this->podcastItemUUID . '.date', $form_state['values']['date'])->save();
-    $config->set('bethel.' . $this->podcastItemUUID . '.description', $form_state['values']['description'])->save();
-    $config->set('bethel.' . $this->podcastItemUUID . '.duration', $form_state['values']['duration'])->save();
+    // Send the request and parse the JSON response into an array
+    $data = $request->send();
 
     drupal_set_message(t('Saved podcast item ' . $form_state['values']['title'] . '. Your changes may take 24 hours to reflect in iTunes.'), 'status');
 
