@@ -251,8 +251,10 @@ class PodcasterController implements ContainerInjectionInterface {
     $vimeo_username = $node->field_vimeo->value;
 
     if ($node->field_type->value == "Vimeo") {
-      $tags = $node->field_tags->getValue();
-      $vimeo = new VimeoParser(array('content' => array('#videofeed' => $vimeo_username, '#filtered' => $tags)));
+      $vimeo = new VimeoParser(array(
+        'id' => $node->id(),
+        'user' => $node->getAuthor()->getValue()['name'][0]['value']
+      ));
       $podcast['items'] = $vimeo->variables['videos'];
       $podcast['type'] = 'video';
     }

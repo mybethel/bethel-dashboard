@@ -76,13 +76,13 @@ class PodcastItemEdit extends ConfigFormBase {
     $client = new Client('http://api.bethel.io/');
     $request = $client->post('podcast', null, array(
       'mediaId' => $this->podcastItemUUID,
-      'title' => $form_state['values']['title'],
-      'date' => $form_state['values']['date'],
-      'description' => $form_state['values']['description'],
-      'duration' => $form_state['values']['duration'],
+      'payload' => array(
+        'title' => $form_state['values']['title'],
+        'date' => $form_state['values']['date'],
+        'description' => $form_state['values']['description'],
+        'duration' => $form_state['values']['duration'],
+      ),
     ));
-
-    // Send the request and parse the JSON response into an array
     $data = $request->send();
 
     drupal_set_message(t('Saved podcast item ' . $form_state['values']['title'] . '. Your changes may take 24 hours to reflect in iTunes.'), 'status');

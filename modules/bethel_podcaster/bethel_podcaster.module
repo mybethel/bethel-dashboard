@@ -94,9 +94,12 @@ function retrieve_remote_file_size($url) {
  * Default template: video-wrapper.html.twig.
  */
 function template_preprocess_video_wrapper(&$variables) {
-  $vimeo = new Drupal\bethel_podcaster\VimeoParser($variables);
-  $variables = $vimeo->variables;
+  $vimeo = new Drupal\bethel_podcaster\VimeoParser(array(
+    'id' => $variables['content']['#node']->id(),
+    'user' => $variables['content']['#node']->getAuthor()->getValue()['name'][0]['value']
+  ));
 
+  $variables['videos'] = $vimeo->variables['videos'];
   $variables['edit_access'] = $variables['content']['#node']->access('update');
 }
 
@@ -119,7 +122,11 @@ function template_preprocess_bethel_wrapper(&$variables) {
 }
 
 function bethel_podcaster_video_form($form, &$form_state, $id) {
-  $video = Drupal::config('bethel.podcaster')->get('video_url.' . $id);
+  $api_client = new Guzzle\Http\Client('http://api.bethel.io');
+  $request = $api_client->get('podcast/' . $id . '?' . time());
+  $media = $request->send()->json();
+
+  $video = isset($media['url']) ? $media['url'] : null;
   $button_class = isset($video) ? 'btn-default' : 'btn-primary';
 
   $form['video_url'] = array(
@@ -144,7 +151,7 @@ function bethel_podcaster_video_form($form, &$form_state, $id) {
 }
 
 function bethel_podcaster_forms($form_id) {
-  if (preg_match('/^bethel_podcaster_video_form_\d+$/', $form_id)) {
+  if (preg_match('/^bethel_podcaster_video_form_.+$/', $form_id)) {
     return array(
       $form_id => array(
         'callback' => 'bethel_podcaster_video_form',
@@ -157,12 +164,16 @@ function bethel_podcaster_video_form_validate($form, &$form_state) {
   // Validation logic.
 }
 
-function bethel_podcaster_video_form_submit($form, &$form_state) {
-  $config = Drupal::config('bethel.podcaster');
-
-  $config->set('video_url.' . $form_state['values']['video_id'], $form_state['values']['video_url'])->save();
-  $config->set('video_size.' . $form_state['values']['video_id'], retrieve_remote_file_size($form_state['values']['video_url']))
-    ->save();
+function bethel_podcaster_video_form_submit($form, &$form_state) {    
+  $client = new Guzzle\Http\Client('http://api.bethel.io/');
+  $request = $client->post('podcast', null, array(
+    'mediaId' => $form_state['values']['video_id'],
+    'payload' => array(
+      'url' => $form_state['values']['video_url'],
+      'size' => retrieve_remote_file_size($form_state['values']['video_url']),
+    ),
+  ));
+  $data = $request->send();
 
   drupal_set_message(t('Saved video file location for #' . $form_state['values']['video_id'] . '.  This video will now be visible in iTunes'), 'status');
 }

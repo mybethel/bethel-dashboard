@@ -8,61 +8,46 @@
 namespace Drupal\bethel_podcaster;
 
 use \Drupal\Component\Utility\Json;
+use Guzzle\Http\Client;
 
 class VimeoParser {
 
   private $username;
-  private $tags;
+  private $id;
 
   public $variables;
 
   // Read the Google Analytics UUID or create a new one.
   public function __construct($variables) {
     $this->variables = $variables;
-    $this->username = $variables['content']['#videofeed'];
 
-    foreach ($variables['content']['#filtered'] as $tag) {
-      $tag_entity = entity_load('taxonomy_term', $tag['target_id']);
-      $this->tags[] = $tag_entity->getValue()['name'][0]['value'];
-    }
+    $this->id = $variables['id'];
 
-    $page = 1;
-    do {
-      $this->processVimeoFeed($page);
-      $page++;
-    }
-    while ($page <= 3);
+    $this->processVimeoFeed();
   }
 
-  private function processVimeoFeed($page) {
-    $rawdata = file_get_contents('http://vimeo.com/api/v2/' . $this->username . '/videos.json?page=' . $page);
+  private function processVimeoFeed() {
+    $api_client = new Client('http://api.bethel.io');
+    $request = $api_client->get('podcast/all/' . $this->id);
+    $media = $request->send()->json();
+    
+    foreach ($media as $index => $item) {
+      $index = strtotime($item['date']) . '.' . $index;
 
-    // Decode the JSON into an array for parsing.
-    $videos = Json::decode($rawdata);
-    $config = \Drupal::config('bethel.podcaster');
-
-    // Evaluate each video that Vimeo returns for the user.
-    foreach ($videos as $video) {
-      $tags = explode(', ', $video['tags']);
-
-      foreach ($tags as $tag) {
-        // Only include videos in the podcast that match tags the user has set.
-        if (in_array($tag, $this->tags)) {
-          $durationformat = $video['duration'] < 3600 ? 'i:s' : 'H:i:s';
-          $this->variables['videos'][$video['id']]['title'] = htmlspecialchars($video['title']);
-          $this->variables['videos'][$video['id']]['url'] = $video['url'];
-          $this->variables['videos'][$video['id']]['date'] = date(DATE_RSS, strtotime($video['upload_date']));
-          $this->variables['videos'][$video['id']]['description'] = $video['description'];
-          $this->variables['videos'][$video['id']]['keywords'] = htmlspecialchars($video['tags']);
-          $this->variables['videos'][$video['id']]['length'] = $video['duration'];
-          $this->variables['videos'][$video['id']]['thumbnail'] = $video['thumbnail_small'];
-          $this->variables['videos'][$video['id']]['duration'] = date($durationformat, $video['duration']);
-          $this->variables['videos'][$video['id']]['resource']['url'] = $config->get('video_url.' . $video['id']);
-          $this->variables['videos'][$video['id']]['resource']['size'] = $config->get('video_size.' . $video['id']);
-          $this->variables['videos'][$video['id']]['resource']['type'] = 'video/mp4';
-          $this->variables['videos'][$video['id']]['form'] = drupal_get_form('bethel_podcaster_video_form_' . $video['id'], $video['id']);
-        }
-      }
+      $durationformat = $item['duration'] < 3600 ? 'i:s' : 'H:i:s';
+      $this->variables['videos'][$index]['uuid'] = $item['_id'];
+      $this->variables['videos'][$index]['title'] = htmlspecialchars($item['title']);
+      $this->variables['videos'][$index]['date'] = date('r', strtotime($item['date']));
+      $this->variables['videos'][$index]['description'] = htmlspecialchars($item['description']);
+      $this->variables['videos'][$index]['keywords'] = htmlspecialchars(implode(', ', $item['tags']));
+      $this->variables['videos'][$index]['thumbnail'] = $item['thumbnail'];
+      $this->variables['videos'][$index]['duration'] = date($durationformat, $item['duration']);
+      $this->variables['videos'][$index]['resource']['url'] = isset($item['url']) ? $item['url'] : '';
+      $this->variables['videos'][$index]['resource']['size'] = $item['size'];
+      $this->variables['videos'][$index]['resource']['type'] = 'video/mp4';
+      $this->variables['videos'][$index]['form'] = drupal_get_form('bethel_podcaster_video_form_' . $item['_id'], $item['_id']);
     }
+    
+    krsort($this->variables['videos']);
   }
 }
