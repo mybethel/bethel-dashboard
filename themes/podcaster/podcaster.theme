@@ -25,12 +25,8 @@ function podcaster_library_info() {
       ),
     ),
     'css' => array(
-      $bootstrap . '/css/bootstrap.min.css' => array(
-        'group' => CSS_AGGREGATE_THEME,
-      ),
-      $bootstrap . '/css/bootstrap-theme.min.css' => array(
-        'group' => CSS_AGGREGATE_THEME,
-      ),
+      $bootstrap . '/css/bootstrap.min.css' => array('weight' => -99),
+      $bootstrap . '/css/bootstrap-theme.min.css' => array('weight' => -99),
     ),
   );
   return $libraries;
@@ -43,6 +39,7 @@ function podcaster_library_info() {
  */
 function podcaster_preprocess_html(&$variables) {
   drupal_add_library('system', 'jquery');
+  drupal_add_library('podcaster', 'bootstrap-theme');
 
   if (!empty($variables['page']['featured'])) {
     $variables['attributes']['class'][] = 'featured';
@@ -60,15 +57,6 @@ function podcaster_preprocess_html(&$variables) {
     || !empty($variables['page']['footer_fourthcolumn'])) {
     $variables['attributes']['class'][] = 'footer-columns';
   }
-  
-  $libraries = array(
-    '#attached' => array(
-      'library' => array(
-        array('podcaster', 'bootstrap-theme'),
-      ),
-    ),
-  );
-  drupal_render($libraries);
 }
 
 /**

@@ -137,7 +137,7 @@ class PodcasterController implements ContainerInjectionInterface {
 
     drupal_set_title('My Podcasts');
 
-    drupal_add_js('jQuery(document).ready(function () { jQuery("td.subscribers span").tooltip() });', 'inline');
+    //drupal_add_js('jQuery(document).ready(function () { jQuery("td.subscribers span").tooltip() });', 'inline');
 
     return l('New Podcast', '/node/add/podcast', array(
       'attributes' => array(

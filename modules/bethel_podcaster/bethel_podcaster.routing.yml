@@ -8,7 +8,7 @@ bethel_podcaster.podcast_feed:
 bethel_podcaster.podcast_admin:
   path: '/podcaster'
   defaults:
-    _controller: '\Drupal\bethel_podcaster\PodcasterController::podcast_admin'
+    _content: '\Drupal\bethel_podcaster\PodcasterController::podcast_admin'
   requirements:
     _access: 'TRUE'
 
