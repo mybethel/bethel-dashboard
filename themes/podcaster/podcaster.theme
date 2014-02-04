@@ -6,9 +6,10 @@
  */
  
 function podcaster_library_info() {
+  $bootstrap = libraries_get_path('bootstrap');
   $libraries['drupal.node'] = array(
     'title' => 'Node',
-    'version' => VERSION,
+    'version' => \Drupal::VERSION,
     'js' => array(
       drupal_get_path('module', 'node') . '/node.js' => array(),
     ),
@@ -16,6 +17,23 @@ function podcaster_library_info() {
       array('system', 'jquery'),
     ),
   );
+  $libraries['bootstrap-theme'] = array(
+    'version' => \Drupal::VERSION,
+    'js' => array(
+      $bootstrap . '/js/bootstrap.min.js' => array(
+        'group' => JS_THEME,
+      ),
+    ),
+    'css' => array(
+      $bootstrap . '/css/bootstrap.min.css' => array(
+        'group' => CSS_AGGREGATE_THEME,
+      ),
+      $bootstrap . '/css/bootstrap-theme.min.css' => array(
+        'group' => CSS_AGGREGATE_THEME,
+      ),
+    ),
+  );
+  return $libraries;
 }
 
 /**
@@ -25,9 +43,6 @@ function podcaster_library_info() {
  */
 function podcaster_preprocess_html(&$variables) {
   drupal_add_library('system', 'jquery');
-  drupal_add_css(libraries_get_path('bootstrap') . '/css/bootstrap.min.css');
-  drupal_add_css(libraries_get_path('bootstrap') . '/css/bootstrap-theme.min.css');
-  drupal_add_js(libraries_get_path('bootstrap') . '/js/bootstrap.min.js');
 
   if (!empty($variables['page']['featured'])) {
     $variables['attributes']['class'][] = 'featured';
@@ -45,6 +60,15 @@ function podcaster_preprocess_html(&$variables) {
     || !empty($variables['page']['footer_fourthcolumn'])) {
     $variables['attributes']['class'][] = 'footer-columns';
   }
+  
+  $libraries = array(
+    '#attached' => array(
+      'library' => array(
+        array('podcaster', 'bootstrap-theme'),
+      ),
+    ),
+  );
+  drupal_render($libraries);
 }
 
 /**
