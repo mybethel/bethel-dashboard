@@ -10,10 +10,12 @@ namespace Drupal\Core\Config;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Config\ConfigNameException;
-use Drupal\Core\Config\Context\ContextInterface;
+use Drupal\Core\Config\Schema\SchemaIncompleteException;
 use Drupal\Core\TypedData\PrimitiveInterface;
 use Drupal\Core\TypedData\Type\FloatInterface;
 use Drupal\Core\TypedData\Type\IntegerInterface;
+use Drupal\Core\Language\Language;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * Defines the default configuration object.
@@ -31,6 +33,20 @@ class Config {
    * @see http://en.wikipedia.org/wiki/Comparison_of_file_systems
    */
   const MAX_NAME_LENGTH = 250;
+
+  /**
+   * An event dispatcher instance to use for configuration events.
+   *
+   * @var \Symfony\Component\EventDispatcher\EventDispatcher
+   */
+  protected $eventDispatcher;
+
+  /**
+   * The language object used to override configuration data.
+   *
+   * @var Drupal\Core\Language\Language
+   */
+  protected $language;
 
   /**
    * The name of the configuration object.
@@ -54,11 +70,28 @@ class Config {
   protected $data;
 
   /**
-   * The current runtime data ($data + $overrides from Config Context).
+   * The current runtime data.
+   *
+   * The configuration data from storage merged with language, module and
+   * settings overrides.
    *
    * @var array
    */
   protected $overriddenData;
+
+  /**
+   * The current language overrides.
+   *
+   * @var array
+   */
+  protected $languageOverrides;
+
+  /**
+   * The current module overrides.
+   *
+   * @var array
+   */
+  protected $moduleOverrides;
 
   /**
    * The storage used to load and save this configuration object.
@@ -66,13 +99,6 @@ class Config {
    * @var \Drupal\Core\Config\StorageInterface
    */
   protected $storage;
-
-  /**
-   * The configuration context used for this configuration object.
-   *
-   * @var \Drupal\Core\Config\Context\ContextInterface
-   */
-  protected $context;
 
   /**
    * Whether the configuration object has already been loaded.
@@ -103,28 +129,19 @@ class Config {
    * @param \Drupal\Core\Config\StorageInterface $storage
    *   A storage controller object to use for reading and writing the
    *   configuration data.
-   * @param \Drupal\Core\Config\Context\ContextInterface $context
-   *   The configuration context used for this configuration object.
+   * @param \Symfony\Component\EventDispatcher\EventDispatcher $event_dispatcher
+   *   An event dispatcher instance to use for configuration events.
    * @param \Drupal\Core\Config\TypedConfigManager $typed_config
    *   The typed configuration manager service.
+   * @param \Drupal\Core\Language\Language $language
+   *   The language object used to override configuration data.
    */
-  public function __construct($name, StorageInterface $storage, ContextInterface $context, TypedConfigManager $typed_config) {
+  public function __construct($name, StorageInterface $storage, EventDispatcher $event_dispatcher, TypedConfigManager $typed_config, Language $language = NULL) {
     $this->name = $name;
     $this->storage = $storage;
-    $this->context = $context;
+    $this->eventDispatcher = $event_dispatcher;
     $this->typedConfigManager = $typed_config;
-  }
-
-  /**
-   * Initializes a configuration object.
-   *
-   * @return \Drupal\Core\Config\Config
-   *   The configuration object.
-   */
-  public function init() {
-    $this->isLoaded = FALSE;
-    $this->notify('init');
-    return $this;
+    $this->language = $language;
   }
 
   /**
@@ -138,10 +155,11 @@ class Config {
    */
   public function initWithData(array $data) {
     $this->isLoaded = TRUE;
+    $this->settingsOverrides = array();
+    $this->languageOverrides = array();
+    $this->moduleOverrides = array();
     $this->isNew = FALSE;
-    $this->notify('init');
     $this->replaceData($data);
-    $this->notify('load');
     return $this;
   }
 
@@ -294,7 +312,7 @@ class Config {
   }
 
   /**
-   * Sets overridden data for this configuration object.
+   * Sets settings.php overrides for this configuration object.
    *
    * The overridden data only applies to this configuration object.
    *
@@ -304,8 +322,38 @@ class Config {
    * @return \Drupal\Core\Config\Config
    *   The configuration object.
    */
-  public function setOverride(array $data) {
-    $this->context->setOverrides($this->getName(), $data);
+  public function setSettingsOverride(array $data) {
+    $this->settingsOverrides = $data;
+    $this->resetOverriddenData();
+    return $this;
+  }
+
+  /**
+   * Sets module overrides for this configuration object.
+   *
+   * @param array $data
+   *   The overridden values of the configuration data.
+   *
+   * @return \Drupal\Core\Config\Config
+   *   The configuration object.
+   */
+  public function setModuleOverride(array $data) {
+    $this->moduleOverrides = $data;
+    $this->resetOverriddenData();
+    return $this;
+  }
+
+  /**
+   * Sets language overrides for this configuration object.
+   *
+   * @param array $data
+   *   The overridden values of the configuration data.
+   *
+   * @return \Drupal\Core\Config\Config
+   *   The configuration object.
+   */
+  public function setLanguageOverride(array $data) {
+    $this->languageOverrides = $data;
     $this->resetOverriddenData();
     return $this;
   }
@@ -313,16 +361,24 @@ class Config {
   /**
    * Sets the current data for this configuration object.
    *
-   * Merges overridden configuration data into the original data.
+   * Configuration overrides operate at three distinct layers: language, modules
+   * and settings.php, with the last of these taking precedence. Overrides in
+   * settings.php take precedence over values provided by modules. Overrides
+   * provided by modules take precedence over language.
    *
    * @return \Drupal\Core\Config\Config
    *   The configuration object.
    */
   protected function setOverriddenData() {
     $this->overriddenData = $this->data;
-    $overrides = $this->context->getOverrides($this->getName());
-    if (is_array($overrides)) {
-      $this->overriddenData = NestedArray::mergeDeepArray(array($this->overriddenData, $overrides), TRUE);
+    if (isset($this->languageOverrides) && is_array($this->languageOverrides)) {
+      $this->overriddenData = NestedArray::mergeDeepArray(array($this->overriddenData, $this->languageOverrides), TRUE);
+    }
+    if (isset($this->moduleOverrides) && is_array($this->moduleOverrides)) {
+      $this->overriddenData = NestedArray::mergeDeepArray(array($this->overriddenData, $this->moduleOverrides), TRUE);
+    }
+    if (isset($this->settingsOverrides) && is_array($this->settingsOverrides)) {
+      $this->overriddenData = NestedArray::mergeDeepArray(array($this->overriddenData, $this->settingsOverrides), TRUE);
     }
     return $this;
   }
@@ -411,7 +467,6 @@ class Config {
       $this->isNew = FALSE;
       $this->replaceData($data);
     }
-    $this->notify('load');
     $this->isLoaded = TRUE;
     return $this;
   }
@@ -478,7 +533,7 @@ class Config {
    *   The configuration event name.
    */
   protected function notify($config_event_name) {
-    $this->context->notify($config_event_name, $this);
+    $this->eventDispatcher->dispatch('config.' . $config_event_name, new ConfigEvent($this));
   }
 
   /**
@@ -517,37 +572,6 @@ class Config {
   }
 
   /**
-   * Gets the definition for the configuration key.
-   *
-   * @param string $key
-   *   A string that maps to a key within the configuration data.
-   *
-   * @return \Drupal\Core\Config\Schema\Element
-   *
-   * @throws \Drupal\Core\Config\ConfigException
-   *   Thrown when schema is incomplete.
-   */
-  protected function getSchemaForKey($key) {
-    $parts = explode('.', $key);
-    $schema_wrapper = $this->getSchemaWrapper();
-    if (count($parts) == 1) {
-      $schema = $schema_wrapper->get($key);
-    }
-    else {
-      $schema = clone $schema_wrapper;
-      foreach ($parts as $nested_key) {
-        if (!is_object($schema) || !method_exists($schema, 'get')) {
-          throw new ConfigException(String::format("Incomplete schema for !key key in configuration object !name.", array('!name' => $this->name, '!key' => $key)));
-        }
-        else {
-          $schema = $schema->get($nested_key);
-        }
-      }
-    }
-    return $schema;
-  }
-
-  /**
    * Casts the value to correct data type using the configuration schema.
    *
    * @param string $key
@@ -564,7 +588,7 @@ class Config {
     }
     elseif (is_scalar($value)) {
       try {
-        $element = $this->getSchemaForKey($key);
+        $element = $this->getSchemaWrapper()->get($key);
         if ($element instanceof PrimitiveInterface) {
           // Special handling for integers and floats since the configuration
           // system is primarily concerned with saving values from the Form API
@@ -586,7 +610,7 @@ class Config {
           $value = $element->getString();
         }
       }
-      catch (\Exception $e) {
+      catch (SchemaIncompleteException $e) {
         // @todo throw an exception due to an incomplete schema. Only possible
         //   once https://drupal.org/node/1910624 is complete.
       }
@@ -604,4 +628,27 @@ class Config {
     return $value;
   }
 
+  /**
+   * Returns the language object for this Config object.
+   *
+   * @return \Drupal\Core\Language\Language
+   */
+  public function getLanguage() {
+    return $this->language;
+  }
+
+  /**
+   * Gets the raw data without overrides.
+   *
+   * @return array
+   *   The raw data.
+   */
+  public function getRawData() {
+    if (!$this->isLoaded) {
+      $this->load();
+    }
+    return $this->data;
+  }
+
 }
+

@@ -8,7 +8,6 @@
 namespace Drupal\content_translation\Tests\Menu;
 
 use Drupal\Tests\Core\Menu\LocalTaskIntegrationTest;
-use Drupal\content_translation\Plugin\Derivative\ContentTranslationLocalTasks;;
 
 /**
  * Tests existence of block local tasks.
@@ -33,37 +32,20 @@ class ContentTranslationLocalTasksTest extends LocalTaskIntegrationTest {
     );
     parent::setUp();
 
+    $entity_type = $this->getMock('Drupal\Core\Entity\EntityTypeInterface');
+    $entity_type->expects($this->any())
+      ->method('getLinkTemplate')
+      ->will($this->returnValueMap(array(
+        array('canonical', 'node.view'),
+        array('drupal:content-translation-overview', 'content_translation.translation_overview_node'),
+      )));
     $content_translation_manager = $this->getMock('Drupal\content_translation\ContentTranslationManagerInterface');
     $content_translation_manager->expects($this->any())
       ->method('getSupportedEntityTypes')
       ->will($this->returnValue(array(
-        'node' => array(
-          'translatable' => TRUE,
-          'links' => array(
-            'canonical' => 'node.view',
-            'drupal:content-translation-overview' => 'content_translation.translation_overview_node',
-          ),
-        ),
+        'node' => $entity_type,
       )));
     \Drupal::getContainer()->set('content_translation.manager', $content_translation_manager);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getLocalTaskManager($modules, $route_name, $route_params) {
-    $manager = parent::getLocalTaskManager($modules, $route_name, $route_params);
-
-    // Duplicate content_translation_local_tasks_alter()'s code here to avoid
-    // having to load the .module file.
-    $this->moduleHandler->expects($this->once())
-      ->method('alter')
-      ->will($this->returnCallback(function ($hook, &$local_tasks) {
-          // Alters in tab_root_id onto the content translation local task.
-          $derivative = ContentTranslationLocalTasks::create(\Drupal::getContainer(), 'content_translation.local_tasks');
-          $derivative->alterLocalTasks($local_tasks);
-      }));
-    return $manager;
   }
 
   /**

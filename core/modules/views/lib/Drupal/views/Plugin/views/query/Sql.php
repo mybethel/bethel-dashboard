@@ -1257,7 +1257,7 @@ class Sql extends QueryPluginBase {
 
       foreach ($entity_information as $entity_type => $info) {
         $entity_info = \Drupal::entityManager()->getDefinition($entity_type);
-        $base_field = empty($table['revision']) ? $entity_info['entity_keys']['id'] : $entity_info['entity_keys']['revision'];
+        $base_field = empty($table['revision']) ? $entity_info->getKey('id') : $entity_info->getKey('revision');
         $this->addField($info['alias'], $base_field, '', $params);
       }
     }
@@ -1373,6 +1373,13 @@ class Sql extends QueryPluginBase {
         $access_tag = $base_table_data['table']['base']['access query tag'];
         $query->addTag($access_tag);
         $count_query->addTag($access_tag);
+      }
+
+      if (isset($base_table_data['table']['base']['query metadata'])) {
+        foreach ($base_table_data['table']['base']['query metadata'] as $key => $value) {
+          $query->addMetaData($key, $value);
+          $count_query->addMetaData($key, $value);
+        }
       }
     }
 
@@ -1494,7 +1501,7 @@ class Sql extends QueryPluginBase {
     // Determine which of the tables are revision tables.
     foreach ($entity_tables as $table_alias => $table) {
       $info = \Drupal::entityManager()->getDefinition($table['entity_type']);
-      if (isset($info['revision table']) && $info['revision table'] == $table['base']) {
+      if ($info->getRevisionTable() == $table['base']) {
         $entity_tables[$table_alias]['revision'] = TRUE;
       }
     }
@@ -1520,7 +1527,7 @@ class Sql extends QueryPluginBase {
     $ids_by_type = array();
     foreach ($entity_information as $entity_type => $info) {
       $entity_info = \Drupal::entityManager()->getDefinition($entity_type);
-      $id_key = empty($table['revision']) ? $entity_info['entity_keys']['id'] : $entity_info['entity_keys']['revision'];
+      $id_key = empty($table['revision']) ? $entity_info->getKey('id') : $entity_info->getKey('revision');
       $id_alias = $this->getFieldAlias($info['alias'], $id_key);
 
       foreach ($results as $index => $result) {

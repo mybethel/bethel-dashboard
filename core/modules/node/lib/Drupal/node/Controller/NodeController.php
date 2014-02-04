@@ -43,7 +43,7 @@ class NodeController extends ControllerBase {
     // Bypass the node/add listing if only one content type is available.
     if (count($content) == 1) {
       $type = array_shift($content);
-      return $this->redirect('node_add', array('node_type' => $type->type));
+      return $this->redirect('node.add', array('node_type' => $type->type));
     }
 
     return array(
@@ -69,7 +69,7 @@ class NodeController extends ControllerBase {
       'uid' => $account->id(),
       'name' => $account->getUsername() ?: '',
       'type' => $node_type->type,
-      'langcode' => $langcode ? $langcode : $this->languageManager()->getLanguage()->id,
+      'langcode' => $langcode ? $langcode : $this->languageManager()->getCurrentLanguage()->id,
     ));
 
     $form = $this->entityManager()->getForm($node);

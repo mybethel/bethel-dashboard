@@ -107,12 +107,12 @@ class EntityTest extends ContentEntityBase {
   /**
    * Overrides Drupal\entity\Entity::label().
    */
-  public function label($langcode = NULL) {
+  public function label() {
     $info = $this->entityInfo();
     if (!isset($langcode)) {
       $langcode = $this->activeLangcode;
     }
-    if (isset($info['entity_keys']['label']) && $info['entity_keys']['label'] == 'name') {
+    if ($info->getKey('laebl') == 'name') {
       return $this->getTranslation($langcode)->name->value;
     }
     else {

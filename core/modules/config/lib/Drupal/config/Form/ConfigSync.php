@@ -149,8 +149,8 @@ class ConfigSync extends FormBase {
     );
 
     $source_list = $this->sourceStorage->listAll();
-    $config_comparer = new StorageComparer($this->sourceStorage, $this->targetStorage);
-    if (empty($source_list) || !$config_comparer->createChangelist()->hasChanges()) {
+    $storage_comparer = new StorageComparer($this->sourceStorage, $this->targetStorage);
+    if (empty($source_list) || !$storage_comparer->createChangelist()->hasChanges()) {
       $form['no_changes'] = array(
         '#theme' => 'table',
         '#header' => array('Name', 'Operations'),
@@ -160,15 +160,20 @@ class ConfigSync extends FormBase {
       $form['actions']['#access'] = FALSE;
       return $form;
     }
+    elseif (!$storage_comparer->validateSiteUuid()) {
+      drupal_set_message($this->t('The staged configuration cannot be imported, because it originates from a different site than this site. You can only synchronize configuration between cloned instances of this site.'), 'error');
+      $form['actions']['#access'] = FALSE;
+      return $form;
+    }
     else {
       // Store the comparer for use in the submit.
-      $form_state['storage_comparer'] = $config_comparer;
+      $form_state['storage_comparer'] = $storage_comparer;
     }
 
     // Add the AJAX library to the form for dialog support.
     $form['#attached']['library'][] = array('system', 'drupal.ajax');
 
-    foreach ($config_comparer->getChangelist() as $config_change_type => $config_files) {
+    foreach ($storage_comparer->getChangelist() as $config_change_type => $config_files) {
       if (empty($config_files)) {
         continue;
       }
