@@ -11,6 +11,10 @@ function bethel_podcaster_menu() {
     'context' => MENU_CONTEXT_PAGE,
     'weight' => 100,
   );
+  $items['podcaster'] = array(
+    'title' => 'My Podcasts',
+    'route_name' => 'bethel_podcaster.podcast_admin',
+  );
   return $items;
 }
 
