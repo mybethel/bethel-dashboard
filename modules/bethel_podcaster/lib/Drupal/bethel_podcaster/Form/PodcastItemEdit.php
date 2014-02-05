@@ -60,11 +60,6 @@ class PodcastItemEdit extends ConfigFormBase {
       '#title' => t('Description'),
       '#default_value' => $podcast_item['description'],
     );
-    $form['duration'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Duration'),
-      '#default_value' => $podcast_item['duration'],
-    );
 
     return parent::buildForm($form, $form_state);
   }
@@ -79,8 +74,7 @@ class PodcastItemEdit extends ConfigFormBase {
       'payload' => array(
         'title' => $form_state['values']['title'],
         'date' => $form_state['values']['date'],
-        'description' => $form_state['values']['description'],
-        'duration' => $form_state['values']['duration'],
+        'description' => $form_state['values']['description']
       ),
     ));
     $data = $request->send();
