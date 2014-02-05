@@ -44,7 +44,7 @@ class BethelParser {
 
   private function processBethelFeed() {
     $api_client = new Client('http://api.bethel.io');
-    $request = $api_client->get('podcast/all/' . $this->id);
+    $request = $api_client->get('podcast/all/' . $this->id . '?' . time());
     $media = $request->send()->json();
     
     foreach ($media as $index => $item) {

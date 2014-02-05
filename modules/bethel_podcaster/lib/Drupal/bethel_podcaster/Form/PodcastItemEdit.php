@@ -42,7 +42,7 @@ class PodcastItemEdit extends ConfigFormBase {
    */
   public function buildForm(array $form, array &$form_state) {
     $api_client = new Client('http://api.bethel.io');
-    $request = $api_client->get('podcast/' . $this->podcastItemUUID);
+    $request = $api_client->get('podcast/' . $this->podcastItemUUID . '?' . time());
     $podcast_item = $request->send()->json();
 
     $form['title'] = array(
