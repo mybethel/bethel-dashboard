@@ -22,6 +22,7 @@ use Drupal\Core\Cache\MemoryBackend;
 use Drupal\bethel_api\BethelAPITracking;
 use Drupal\bethel_podcaster\VimeoParser;
 use Drupal\bethel_podcaster\BethelParser;
+use Guzzle\Http\Client;
 
 class PodcasterController implements ContainerInjectionInterface {
 
@@ -280,6 +281,9 @@ class PodcasterController implements ContainerInjectionInterface {
       'title' => $node->title->value . ' (Podcast Feed)',
       'slug' => node_uri($node)['path'] . '/podcast.xml',
     ));
+    $api_client = new Client('http://api.bethel.io');
+    $request = $api_client->post('podcast/' . $node->id() . '/hit');
+    $request->send();
 
     // Return a JSON formatted array.
     return new Response($podcast_xml, 200, $headers);
