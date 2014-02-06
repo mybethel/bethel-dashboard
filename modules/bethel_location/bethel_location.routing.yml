@@ -1,0 +1,6 @@
+bethel_podcaster.location_admin:
+  path: '/locations'
+  defaults:
+    _content: '\Drupal\bethel_location\LocationController::location_admin'
+  requirements:
+    _access: 'TRUE'

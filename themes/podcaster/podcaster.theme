@@ -5,6 +5,8 @@
  * Functions to support theming in the Bartik theme.
  */
  
+use Drupal\Core\Template\RenderWrapper;
+ 
 function podcaster_library_info() {
   $bootstrap = libraries_get_path('bootstrap');
   $libraries['drupal.node'] = array(
@@ -126,10 +128,20 @@ function podcaster_preprocess_maintenance_page(&$variables) {
   if (!$variables['db_is_active']) {
     $variables['site_name'] = '';
   }
-  drupal_add_css(drupal_get_path('theme', 'bartik') . '/css/maintenance-page.css');
-  $variables['styles'] = drupal_get_css();
+  $variables['styles'] = new RenderWrapper('drupal_get_css');
+  // Normally we could attach libraries via hook_page_alter(), but when the
+  // database is inactive it's not called so we add them here.
+  $libraries = array(
+    '#attached' => array(
+      'library' => array(
+        array('bartik', 'maintenance_page'),
+      ),
+    ),
+  );
 
-  $site_config = Drupal::config('system.site');
+  drupal_render($libraries);
+
+  $site_config = \Drupal::config('system.site');
   // Always print the site name and slogan, but if they are toggled off, we'll
   // just hide them visually.
   $variables['hide_site_name']   = theme_get_setting('features.name') ? FALSE : TRUE;
