@@ -151,6 +151,11 @@ body.toolbar-tray-open #sidebar-first { top: 129px; }
   padding: 10px;
   font-size: 16px;
   height: auto;
+  position: relative;
+}
+
+.user-login-form .form-control:focus {
+  z-index: 2;
 }
 
 .user-login-form input[type="text"] {
