@@ -33,9 +33,6 @@ class PodcasterController implements ContainerInjectionInterface {
    */
   protected $config;
 
-  protected $googleAccessToken;
-  protected $analytics;
-
   /**
    * Constructs a ThemeController object.
    *
@@ -43,22 +40,6 @@ class PodcasterController implements ContainerInjectionInterface {
    *   The config.
    */
   public function __construct(Config $config) {
-    require_once DRUPAL_ROOT . '/libraries/google-api-php-client/src/Google_Client.php';
-    require_once DRUPAL_ROOT . '/libraries/google-api-php-client/src/contrib/Google_AnalyticsService.php';
-
-    $this->analytics = new \Google_Client();
-    $this->analytics->setApplicationName('Bethel');
-    $this->analytics->setClientId($_ENV['GoogleAnalytics']['id']);
-    $this->analytics->setClientSecret($_ENV['GoogleAnalytics']['secret']);
-    $this->analytics->setRedirectUri('http://my.bethel.io/podcaster/analytics/connect');
-    $this->analytics->setDeveloperKey($_ENV['GoogleAnalytics']['key']);
-    $this->analytics->setScopes(array('https://www.googleapis.com/auth/analytics.readonly'));
-    $this->analytics->setUseObjects(TRUE);
-
-    if (isset($_SESSION['token'])) {
-      $this->analytics->setAccessToken($_SESSION['token']);
-    }
-
     $this->config = $config;
   }
 
@@ -152,64 +133,12 @@ class PodcasterController implements ContainerInjectionInterface {
     )) . theme_table($podcast_table);
   }
 
-  public function getSubscribers($node) {
-    $cache = cache('bethel.podcaster');
-    $subscribers = $cache->get('subscribers_' . $node);
+  public function getSubscribers($node) {    
+    $api_client = new Client('http://api.bethel.io');
+    $request = $api_client->get('podcast/' . $node . '/subscribers');
+    $results = $request->send()->json();
 
-    if (!$subscribers) {
-      $this->analyticsConfirmToken();
-
-      if (!$this->analytics->getAccessToken()) {
-        print $this->analytics->createAuthUrl();
-      }
-      else {
-        $analytics = new \Google_AnalyticsService($this->analytics);
-        $visits = $analytics->data_ga->get(
-          'ga:79242714',
-          date('Y-m-d', mktime(0, 0, 0, date("m"), date("d") - 7, date("Y"))),
-          date('Y-m-d'),
-          'ga:pageviews',
-          array('dimensions' => 'ga:pagePath', 'filters' => 'ga:pagePath==/node/' . $node . '/podcast.xml'));
-
-        $subscribers = round($visits->getRows()[0][1] / 7);
-        $cache->set('subscribers_' . $node, $subscribers, time() + (24 * 60 * 60));
-      }
-    }
-    else {
-      $subscribers = $subscribers->data;
-    }
-
-    return $subscribers;
-  }
-
-  public function analyticsConnect() {
-    $this->analytics->authenticate();
-    $access_token = $this->analytics->getAccessToken();
-
-    $config = \Drupal::config('bethel.gapi');
-    $config->set('access_token', $access_token)->save();
-
-    return new RedirectResponse(\Drupal::url('bethel_podcaster.podcast_admin'));
-  }
-
-  private function analyticsConfirmToken() {
-    $config = \Drupal::config('bethel.gapi');
-    $access_token = $config->get('access_token');
-
-    if ($access_token) {
-      $this->analytics->setAccessToken($access_token);
-    }
-
-    if ($this->analytics->isAccessTokenExpired()) {
-      $credentials = Json::decode($access_token);
-
-      if ($credentials['refresh_token']) {
-        $this->analytics->refreshToken($credentials['refresh_token']);
-      }
-      else {
-        print $this->analytics->createAuthUrl();
-      }
-    }
+    return $results['subscribers'];
   }
 
   /**
