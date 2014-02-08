@@ -60,6 +60,7 @@ class LocationController implements ContainerInjectionInterface {
       '#attached' => array(
         'library' => array(
           array('bethel_location', 'location-admin'),
+          array('system', 'drupal.ajax'),
         ),
       ),
     );

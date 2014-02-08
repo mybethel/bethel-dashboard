@@ -5,6 +5,11 @@ body {
   padding-top: 50px;
 }
 
+body.modal-open,
+.modal-open .navbar-fixed-top {
+  margin-right: 0;
+}
+
 #header .navbar {
   background: #1591b5;
   border-color: #106982;
