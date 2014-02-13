@@ -52,14 +52,14 @@ class BethelParser {
       $filename = explode('/', $item['url']);
       $filename = $filename[sizeof($filename) - 1];
       
-      $title = ($item['title']) ? : $filename;
+      $title = isset($item['title']) ? $item['title'] : str_replace('.mp3', '', $filename);
 
       $this->variables['podcast'][$index]['uuid'] = $item['_id'];
       $this->variables['podcast'][$index]['title'] = htmlspecialchars($title);
       $this->variables['podcast'][$index]['date'] = date('r', strtotime($item['date']));
-      $this->variables['podcast'][$index]['description'] = htmlspecialchars($item['description']);
+      $this->variables['podcast'][$index]['description'] = isset($item['description']) ? htmlspecialchars($item['description']) : '';
       $this->variables['podcast'][$index]['keywords'] = ''; //htmlspecialchars($video['tags']);
-      $this->variables['podcast'][$index]['duration'] = $item['duration'];
+      $this->variables['podcast'][$index]['duration'] = isset($item['duration']) ? $item['duration'] : '';
       $this->variables['podcast'][$index]['resource']['url'] = str_replace(array('%2F', '%3A'), array('/', ':'), rawurlencode($item['url']));
       $this->variables['podcast'][$index]['resource']['size'] = $item['size'];
       $this->variables['podcast'][$index]['resource']['type'] = 'audio/mp3';

@@ -45,11 +45,14 @@ class PodcastItemEdit extends ConfigFormBase {
     $api_client = new Client('http://api.bethel.io');
     $request = $api_client->get('podcast/' . $this->podcastItemUUID . '?' . time());
     $podcast_item = $request->send()->json();
+    
+    $filename = explode('/', $podcast_item['url']);
+    $filename = $filename[sizeof($filename) - 1];
 
     $form['title'] = array(
       '#type' => 'textfield',
       '#title' => t('Title'),
-      '#default_value' => $podcast_item['title'],
+      '#default_value' => isset($podcast_item['title']) ? $podcast_item['title'] : str_replace('.mp3', '', $filename),
       '#attributes' => array('class' => array('form-control')),
     );
     $form['date'] = array(
@@ -61,7 +64,7 @@ class PodcastItemEdit extends ConfigFormBase {
     $form['description'] = array(
       '#type' => 'textarea',
       '#title' => t('Description'),
-      '#default_value' => $podcast_item['description'],
+      '#default_value' => isset($podcast_item['description']) ? $podcast_item['description'] : '',
       '#attributes' => array('class' => array('form-control')),
     );
     $form['reference'] = array(
