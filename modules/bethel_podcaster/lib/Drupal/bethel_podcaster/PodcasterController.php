@@ -133,7 +133,7 @@ class PodcasterController implements ContainerInjectionInterface {
     )) . theme_table($podcast_table);
   }
 
-  public function getSubscribers($node) {    
+  public function getSubscribers($node) {   
     $api_client = new Client('http://api.bethel.io');
     $request = $api_client->get('podcast/' . $node . '/subscribers');
     $results = $request->send()->json();

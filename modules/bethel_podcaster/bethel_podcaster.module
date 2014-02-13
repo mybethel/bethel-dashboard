@@ -18,6 +18,16 @@ function bethel_podcaster_menu() {
   return $items;
 }
 
+function bethel_podcaster_library_info() {
+  $libraries['podcaster.edit'] = array(
+    'version' => \Drupal::VERSION,
+    'js' => array(
+      libraries_get_path('typeahead') . '/typeahead.js' => array('group' => JS_THEME),
+    ),
+  );
+  return $libraries;
+}
+
 function bethel_podcaster_theme() {
   return array(
     'video_wrapper' => array(
