@@ -1,6 +1,6 @@
 <div id="bethel_wrapper">
 {% if edit_access %}
-  <form action="https://cloud.bethel.io.s3.amazonaws.com/" method="post" enctype="multipart/form-data">
+  <form action="https://cloud.bethel.io.s3.amazonaws.com/" method="post" enctype="multipart/form-data" id="file_upload">
     <input type="hidden" name="key" value="{{ uid }}/{{ nid }}/${filename}" />
     <input type="hidden" name="AWSAccessKeyId" value="AKIAIJTWZVKSK76KBTHQ" /> 
     <input type="hidden" name="acl" value="public-read" /> 
@@ -8,8 +8,16 @@
     <input type="hidden" name="policy" value="{{ s3.policy }}" />
     <input type="hidden" name="signature" value="{{ s3.signature }}" />
     <input type="hidden" name="Content-Type" value="audio/mp3" />
-    <h3>Add a new Podcast item:</h3>
-    <input name="file" type="file" class="pull-left" /> <input type="submit" value="Upload" class="btn btn-primary btn-sm" />
+    <div id="file-upload">
+      <span class="btn btn-success fileinput-button">
+        <i class="glyphicon glyphicon-plus"></i>
+        <span>Upload podcast files...</span>
+        <input id="fileupload" type="file" name="file" />
+      </span>
+      <div class="progress progress-striped active">
+        <div class="progress-bar" role="progressbar" style="width: 100%;">Uploading...</div>
+      </div>
+    </div>
   </form>
 {% endif %}
 {% for item in podcast %}

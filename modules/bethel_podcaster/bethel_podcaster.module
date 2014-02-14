@@ -25,6 +25,15 @@ function bethel_podcaster_library_info() {
       libraries_get_path('typeahead') . '/typeahead.js' => array('group' => JS_THEME),
     ),
   );
+  $libraries['podcaster.upload'] = array(
+    'version' => \Drupal::VERSION,
+    'css' => array(libraries_get_path('fileupload') . '/css/jquery.fileupload.css'),
+    'js' => array(
+      libraries_get_path('fileupload') . '/js/jquery.fileupload.js' => array('group' => JS_THEME),
+      libraries_get_path('fileupload') . '/js/jquery.iframe-transport.js' => array('group' => JS_THEME),
+      drupal_get_path('module', 'bethel_podcaster') . '/js/podcaster.upload.js',
+    ),
+  );
   return $libraries;
 }
 
@@ -79,6 +88,7 @@ function bethel_podcaster_node_view($node, $display, $view_mode, $langcode) {
           '#theme' => 'bethel_wrapper',
           '#node' => $node,
           '#weight' => '100',
+          '#attached' => array('library' => array(array('bethel_podcaster', 'podcaster.upload'))),
         );
       }
     }
