@@ -13,8 +13,6 @@ jQuery(document).ready(function($) {
       fail: function(e, data) {
           $('.progress').hide();
           $('.fileinput-button').show();
-          console.log('fail');
-          console.log(data);
       },
       progressall: function (e, data) {
           var progress = data.loaded / data.total * 100;
@@ -23,12 +21,13 @@ jQuery(document).ready(function($) {
               $('.progress .progress-bar').css('width', progress + '%');
               $('.progress .progress-bar').text(Math.round(progress) + '%'); 
           }
-          console.log(progress);
       },
       done: function (e, data) {
           $('.progress').hide();
           $('.fileinput-button').show();
-          console.log('done');
+          
+          $.ajax({type: "POST", url: 'http://api.bethel.io/podcast/do/sync'});
+          location.reload();
       }
     });
 });

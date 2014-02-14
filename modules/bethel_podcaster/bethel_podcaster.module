@@ -51,11 +51,6 @@ function bethel_podcaster_theme() {
 }
 
 function bethel_podcaster_node_view($node, $display, $view_mode, $langcode) {
-  if (isset($_GET['etag'])) {
-    $client = new Guzzle\Http\Client('http://api.bethel.io/');
-    $request = $client->post('podcast/do/sync');
-    $request->send();
-  }
   if ($node->getType() == "podcast" && $view_mode == 'full') {
     global $base_url;
     $subscribe_link = $base_url . '/' . node_uri($node)['path'] . '/podcast.xml';
