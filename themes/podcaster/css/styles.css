@@ -325,3 +325,7 @@ body.toolbar-tray-open #sidebar-first { top: 129px; }
   text-align: right;
   width: 140px;
 }
+
+.pac-container {
+  z-index: 1040 !important;
+}

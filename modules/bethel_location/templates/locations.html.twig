@@ -26,6 +26,7 @@
 
 <script type="text/x-handlebars" data-template-name="modal">
 {% verbatim %}
+  <form class="form-horizontal" role="form">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -33,13 +34,26 @@
           <h4 class="modal-title">{{view.title}}</h4>
         </div>
         <div class="modal-body">
-          <p>{{view.content}}</p>
+          <div class="form-group">
+            <label for="title" class="col-sm-2 control-label">Name</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="title" placeholder="Location Name" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="title" class="col-sm-2 control-label">Address</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="address" placeholder="Address" />
+              <p class="help-block">{{view.latitude}}<input type="hidden" id="latitude" {{bind-attr value=view.latitude}} />, {{view.longitude}}<input type="hidden" id="longitude" {{bind-attr value=view.longitude}} /></p>
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" {{action close target="view"}} class="btn btn-default" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary">Save changes</button>
+          <button type="button" class="btn btn-primary">{{view.saveButton}}</button>
         </div>
       </div>
     </div>
+  </form>
 {% endverbatim %}
 </script>

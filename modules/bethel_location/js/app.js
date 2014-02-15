@@ -21,7 +21,7 @@ App.IndexRoute = Ember.Route.extend({
     },
     events: {
         addPodcast: function() {
-            App.ModalView.create({ title: "Add a Location", content: "My content" }).append();
+            App.ModalView.create({ title: "Add a Location", saveButton: "Add Location" }).append();
         }
     }
 });
@@ -29,19 +29,27 @@ App.IndexRoute = Ember.Route.extend({
 App.ModalView = Ember.View.extend({
     templateName: "modal",
     title: "",
-    content: "",
+    saveButton: "",
+    latitude: '0',
+    longitude: '0',
     classNames: ["modal", "fade"],
     didInsertElement: function() {
         this.$().modal('show');
-        this.$().one("hidden", this._viewDidHide);
+        this.$().on('hidden.bs.modal', this._viewDidHide);
+        var editForm = this;
+
+        var locationData = new google.maps.places.Autocomplete((document.getElementById('address')), { types: ['geocode'] });
+        google.maps.event.addListener(locationData, 'place_changed', function() {
+            var place = locationData.getPlace();
+            editForm.set('latitude', place.geometry.location.d);
+            editForm.set('longitude', place.geometry.location.e);
+        });
     },
-    // modal dismissed by example clicked in X, make sure the modal view is destroyed
     _viewDidHide: function() {
         if (!this.isDestroyed) {
-            this.destroy();
+            this.remove();
         }
     },
-    // here we click in close button so _viewDidHide is called
     close: function() {        
         this.$(".close").click();
     }
