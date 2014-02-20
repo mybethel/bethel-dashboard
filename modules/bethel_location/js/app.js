@@ -11,7 +11,7 @@ App.Location = DS.Model.extend({
     loc: DS.attr(),
 });
 
-App.Router.map(function() {   
+App.Router.map(function() {
     // put your routes here
 });
 
@@ -19,19 +19,24 @@ App.IndexRoute = Ember.Route.extend({
     model: function() {
         return this.store.find('location');
     },
-    events: {
+    actions: {
         addPodcast: function() {
-            App.ModalView.create({ title: "Add a Location", saveButton: "Add Location" }).append();
+            var locationView = this.container.lookup('view:newLocation');
+            locationView.appendTo(App.rootElement);
         }
     }
 });
 
-App.ModalView = Ember.View.extend({
+App.ModalView = Ember.Mixin.create({
     templateName: "modal",
-    title: "",
-    saveButton: "",
+    modalTitle: "",
+    saveButton: "Save Location",
+    title: '',
+    description: '',
+    address: '',
     latitude: '0',
     longitude: '0',
+    latlong: '0, 0',
     classNames: ["modal", "fade"],
     didInsertElement: function() {
         this.$().modal('show');
@@ -43,6 +48,7 @@ App.ModalView = Ember.View.extend({
             var place = locationData.getPlace();
             editForm.set('latitude', place.geometry.location.d);
             editForm.set('longitude', place.geometry.location.e);
+            editForm.set('latlong', place.geometry.location.d.toFixed(3)+', '+place.geometry.location.e.toFixed(3));
         });
     },
     _viewDidHide: function() {
@@ -54,3 +60,26 @@ App.ModalView = Ember.View.extend({
         this.$(".close").click();
     }
 });
+
+App.NewLocationView = Ember.View.extend(App.ModalView, {
+    modalTitle: "Add a Location",
+    saveButton: "Add Location",
+    model: function() {
+        return App.Location.createRecord();
+    },
+    actions: {
+        submit: function() {
+            var location = App.Location.store.createRecord('location');
+            location.set('title', this.get('title'));
+            location.set('address', this.get('address'));
+            location.set('loc', [this.get('latitude'), this.get('longitude')]);
+            location.save();
+        }
+    }
+});
+
+App.EditLocationView = Ember.View.extend(App.ModalView, {
+    model: function() {
+        return this.modelFor('location');
+    }
+})

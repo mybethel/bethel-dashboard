@@ -26,34 +26,41 @@
 
 <script type="text/x-handlebars" data-template-name="modal">
 {% verbatim %}
-  <form class="form-horizontal" role="form">
+  <div class="form-horizontal" role="form">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title">{{view.title}}</h4>
+          <h4 class="modal-title">{{view.modalTitle}}</h4>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label for="title" class="col-sm-2 control-label">Name</label>
-            <div class="col-sm-10">
-              <input type="text" class="form-control" id="title" placeholder="Location Name" />
+            <label for="title" class="col-sm-3 control-label">Name</label>
+            <div class="col-sm-9">
+              {{view Ember.TextField valueBinding="view.title" class="form-control" placeholder="Location Name" required="true"}}
             </div>
           </div>
           <div class="form-group">
-            <label for="title" class="col-sm-2 control-label">Address</label>
-            <div class="col-sm-10">
-              <input type="text" class="form-control" id="address" placeholder="Address" />
-              <p class="help-block">{{view.latitude}}<input type="hidden" id="latitude" {{bind-attr value=view.latitude}} />, {{view.longitude}}<input type="hidden" id="longitude" {{bind-attr value=view.longitude}} /></p>
+            <label for="title" class="col-sm-3 control-label">Description</label>
+            <div class="col-sm-9">
+              {{view Ember.TextField valueBinding="view.description" class="form-control" placeholder="A brief description of the location" required="true"}}
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="title" class="col-sm-3 control-label">Address</label>
+            <div class="col-sm-9">
+              <div class="input-group">
+                {{view Ember.TextField valueBinding="view.address" id="address" class="form-control" placeholder="Location Address" required="true"}}<span class="input-group-addon">{{view.latlong}}</span>
+              </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" {{action close target="view"}} class="btn btn-default" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary">{{view.saveButton}}</button>
+          <button type="submit" {{action submit target="view"}} class="btn btn-primary">{{view.saveButton}}</button>
         </div>
       </div>
     </div>
-  </form>
+  </div>
 {% endverbatim %}
 </script>

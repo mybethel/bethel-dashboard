@@ -43,7 +43,7 @@ class VimeoParser {
       $this->variables['videos'][$index]['thumbnail'] = $item['thumbnail'];
       $this->variables['videos'][$index]['duration'] = date($durationformat, $item['duration']);
       $this->variables['videos'][$index]['resource']['url'] = isset($item['url']) ? $item['url'] : '';
-      $this->variables['videos'][$index]['resource']['size'] = $item['size'];
+      $this->variables['videos'][$index]['resource']['size'] = isset($item['size']) ? $item['size'] : '';
       $this->variables['videos'][$index]['resource']['type'] = 'video/mp4';
       $this->variables['videos'][$index]['form'] = drupal_get_form('bethel_podcaster_video_form_' . $item['_id'], $item['_id']);
     }
