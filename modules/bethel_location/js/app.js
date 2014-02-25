@@ -5,10 +5,20 @@ App.ApplicationAdapter = DS.RESTAdapter.extend({
     namespace: 'user/' + drupalSettings.user.uid
 });
 
+App.ApplicationSerializer = DS.RESTSerializer.extend({
+    primaryKey: function(type) {
+        return '_id';
+    },
+    serializeId: function(id) {
+        return id.toString();
+    }
+});
+
 App.Location = DS.Model.extend({
     title: DS.attr('string'),
     address: DS.attr('string'),
     loc: DS.attr(),
+    uid: DS.attr('number'),
 });
 
 App.Router.map(function() {
@@ -72,8 +82,10 @@ App.NewLocationView = Ember.View.extend(App.ModalView, {
             var location = App.Location.store.createRecord('location');
             location.set('title', this.get('title'));
             location.set('address', this.get('address'));
-            location.set('loc', [this.get('latitude'), this.get('longitude')]);
+            location.set('loc', [this.get('longitude'), this.get('latitude')]);
+            location.set('uid', drupalSettings.user.uid);
             location.save();
+            this.$(".close").click();
         }
     }
 });
