@@ -329,3 +329,7 @@ body.toolbar-tray-open #sidebar-first { top: 129px; }
 .pac-container {
   z-index: 1040 !important;
 }
+
+.page-locations div.thumbnail {
+  margin-bottom: 20px;
+}
