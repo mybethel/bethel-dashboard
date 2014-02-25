@@ -16,6 +16,7 @@ App.ApplicationSerializer = DS.RESTSerializer.extend({
 
 App.Location = DS.Model.extend({
     title: DS.attr('string'),
+    description: DS.attr('string'),
     address: DS.attr('string'),
     loc: DS.attr(),
     uid: DS.attr('number'),
@@ -97,6 +98,7 @@ App.NewLocationView = Ember.View.extend(App.ModalView, {
         submit: function() {
             var location = App.Location.store.createRecord('location');
             location.set('title', this.get('title'));
+            location.set('description', this.get('description'));
             location.set('address', this.get('address'));
             location.set('loc', [this.get('longitude'), this.get('latitude')]);
             location.set('uid', drupalSettings.user.uid);
