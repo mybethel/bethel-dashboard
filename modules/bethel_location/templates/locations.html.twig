@@ -7,20 +7,28 @@
 <script type="text/x-handlebars" id="index">
 {% verbatim %}
   <a {{action addPodcast}} class="add-btn btn btn-primary pull-right">Add Location</a>
+  {{#each location in locations}}
+  {{#if location.first}}
   <div class="row">
-  {{#each item in model}}
+  {{/if}}
     <div class="col-sm-6 col-md-4">
       <div class="thumbnail">
-        <img src="http://maps.googleapis.com/maps/api/staticmap?center={{unbound item.loc.[1]}},{{unbound item.loc.[0]}}&zoom=17&size=300x200&maptype=roadmap
-&markers=color:0x1591b5%7C{{unbound item.loc.[1]}},{{unbound item.loc.[0]}}&sensor=false&key=AIzaSyCasoNnO-7ZHrH_NBcCU_BBed6duq8NvJg" alt="{{unbound item.address}}">
+        <img src="http://maps.googleapis.com/maps/api/staticmap?center={{unbound location.loc.[1]}},{{unbound location.loc.[0]}}&zoom=17&size=300x200&maptype=roadmap
+&markers=color:0x1591b5%7C{{unbound location.loc.[1]}},{{unbound location.loc.[0]}}&sensor=false&key=AIzaSyCasoNnO-7ZHrH_NBcCU_BBed6duq8NvJg" alt="{{unbound location.address}}">
         <div class="caption">
-          <h3>{{item.title}}</h3>
-          <small class="text-muted">{{item.address}}</small>
+          <h3>{{location.title}}</h3>
+          <small class="text-muted">{{location.address}}</small>
         </div>
       </div>
     </div>
-  {{/each}}
+  {{#if location.lastOfRow}}
   </div>
+  <div class="row">
+  {{/if}}
+  {{#if location.last}}
+  </div>
+  {{/if}}
+  {{/each}}
 {% endverbatim %}
 </script>
 
