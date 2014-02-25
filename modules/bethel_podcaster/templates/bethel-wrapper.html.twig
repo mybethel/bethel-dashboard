@@ -1,6 +1,6 @@
 <div id="bethel_wrapper">
 {% if edit_access %}
-  <form action="https://cloud.bethel.io.s3.amazonaws.com/" method="post" enctype="multipart/form-data" id="file_upload">
+  <form action="http://cloud.bethel.io.s3.amazonaws.com/" method="post" enctype="multipart/form-data" id="file_upload">
     <input type="hidden" name="key" value="{{ uid }}/{{ nid }}/${filename}" />
     <input type="hidden" name="AWSAccessKeyId" value="AKIAIJTWZVKSK76KBTHQ" /> 
     <input type="hidden" name="acl" value="public-read" /> 

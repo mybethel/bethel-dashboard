@@ -33,6 +33,8 @@ function bethel_podcaster_library_info() {
       libraries_get_path('fileupload') . '/js/jquery.iframe-transport.js' => array('group' => JS_THEME),
       drupal_get_path('module', 'bethel_podcaster') . '/js/podcaster.upload.js',
     ),
+    'dependencies' => array(array('system', 'jquery.ui.tabs')
+    ),
   );
   return $libraries;
 }
