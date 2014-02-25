@@ -333,3 +333,8 @@ body.toolbar-tray-open #sidebar-first { top: 129px; }
 .page-locations div.thumbnail {
   margin-bottom: 20px;
 }
+
+.page-locations div.thumbnail h3 {
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
