@@ -56,9 +56,10 @@ App.ModalView = Ember.Mixin.create({
         var locationData = new google.maps.places.Autocomplete((document.getElementById('address')), { types: ['geocode'] });
         google.maps.event.addListener(locationData, 'place_changed', function() {
             var place = locationData.getPlace();
+            editForm.set('address', place.formatted_address);
             editForm.set('latitude', place.geometry.location.d);
             editForm.set('longitude', place.geometry.location.e);
-            editForm.set('latlong', place.geometry.location.d.toFixed(3)+', '+place.geometry.location.e.toFixed(3));
+            editForm.set('latlong', place.geometry.location.e.toFixed(3)+', '+place.geometry.location.d.toFixed(3));
         });
     },
     _viewDidHide: function() {
