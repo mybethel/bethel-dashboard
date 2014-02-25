@@ -7,7 +7,7 @@
  
 use Drupal\Core\Template\RenderWrapper;
  
-function podcaster_library_info() {
+function mybethel_library_info() {
   $bootstrap = libraries_get_path('bootstrap');
   $libraries['drupal.node'] = array(
     'title' => 'Node',
@@ -39,9 +39,9 @@ function podcaster_library_info() {
  *
  * Adds body classes if certain regions have content.
  */
-function podcaster_preprocess_html(&$variables) {
+function mybethel_preprocess_html(&$variables) {
   drupal_add_library('system', 'jquery');
-  drupal_add_library('podcaster', 'bootstrap-theme');
+  drupal_add_library('mybethel', 'bootstrap-theme');
 
   if (!empty($variables['page']['featured'])) {
     $variables['attributes']['class'][] = 'featured';
@@ -64,7 +64,7 @@ function podcaster_preprocess_html(&$variables) {
 /**
  * Implements hook_preprocess_HOOK() for page.html.twig.
  */
-function podcaster_preprocess_page(&$variables) {
+function mybethel_preprocess_page(&$variables) {
   // Pass the main menu and secondary menu to the template as render arrays.
   if (!empty($variables['main_menu'])) {
     $variables['main_menu']['#attributes']['id'] = 'primary-menu-links';
@@ -120,7 +120,7 @@ function podcaster_preprocess_page(&$variables) {
 /**
  * Implements hook_preprocess_HOOK() for maintenance-page.html.twig.
  */
-function podcaster_preprocess_maintenance_page(&$variables) {
+function mybethel_preprocess_maintenance_page(&$variables) {
   // By default, site_name is set to Drupal if no db connection is available
   // or during site installation. Setting site_name to an empty string makes
   // the site and update pages look cleaner.
@@ -159,7 +159,7 @@ function podcaster_preprocess_maintenance_page(&$variables) {
 /**
  * Implements hook_preprocess_HOOK() for node.html.twig.
  */
-function podcaster_preprocess_node(&$variables) {
+function mybethel_preprocess_node(&$variables) {
   // Remove the "Add new comment" link on teasers or when the comment form is
   // displayed on the page.
   if ($variables['teaser'] || !empty($variables['content']['comments']['comment_form'])) {
@@ -170,21 +170,21 @@ function podcaster_preprocess_node(&$variables) {
 /**
  * Implements theme_menu_tree().
  */
-function podcaster_menu_tree($variables) {
+function mybethel_menu_tree($variables) {
   return '<ul class="menu clearfix">' . $variables['tree'] . '</ul>';
 }
 
 /**
  * Implements theme_menu_tree__shortcut_default() {
  */
-function podcaster_menu_tree__shortcut_default($variables) {
+function mybethel_menu_tree__shortcut_default($variables) {
   return '<ul class="menu">' . $variables['tree'] . '</ul>';
 }
 
 /**
  * Implements theme_field__field_type().
  */
-function podcaster_field__taxonomy_term_reference($variables) {
+function mybethel_field__taxonomy_term_reference($variables) {
   $output = '';
 
   // Render the label, if it's not hidden.
@@ -206,7 +206,7 @@ function podcaster_field__taxonomy_term_reference($variables) {
   return $output;
 }
 
-function podcaster_form_alter(&$form, &$form_state, $form_id) {
+function mybethel_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'user_login_form') {
     $form['name']['#title'] = '';
     $form['name']['#description'] = '';
@@ -236,7 +236,7 @@ function podcaster_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
-function podcaster_menu_local_tasks_alter(&$data, $route_name) {
+function mybethel_menu_local_tasks_alter(&$data, $route_name) {
   if ($route_name == 'user.view') {
     $tabs = $data['tabs'][0];
     

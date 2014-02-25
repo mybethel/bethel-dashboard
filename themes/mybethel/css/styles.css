@@ -74,12 +74,12 @@ body.toolbar-tray-open #sidebar-first { top: 129px; }
   margin-left: 251px;
 }
 
-#sidebar-first #block-main-menu .content ul {
+#sidebar-first #block-mybethel-main-menu .content ul {
   margin: 0;
   border-bottom: 1px solid #1e2732;
   box-shadow: 0 1px 0 #384352;
 }
-#sidebar-first #block-main-menu .content ul a {
+#sidebar-first #block-mybethel-main-menu .content ul a {
   padding: 16px;
   color: white;
   border-top: 1px solid #1e2732;
@@ -88,11 +88,11 @@ body.toolbar-tray-open #sidebar-first { top: 129px; }
   font-family: 'Source Sans Pro', sans-serif;
   font-size: 15px;
 }
-#sidebar-first #block-main-menu .content ul a:hover {
+#sidebar-first #block-mybethel-main-menu .content ul a:hover {
   background: #333d4a;
   text-decoration: none;
 }
-#sidebar-first #block-main-menu .content ul a:active {
+#sidebar-first #block-mybethel-main-menu .content ul a:active {
   background: #283341;
   box-shadow: none;
 }
