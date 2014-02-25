@@ -43,13 +43,9 @@ App.IndexController = Ember.ArrayController.extend({
         var length = this.get('length');
 
         return this.map(function (location, i) {
-            if ((i + 1) == length) {
-                location.last = true;
-            } else {
-                location.last = false;
-                location.first = (i == 0);
-                location.lastOfRow = ((i + 1) % 3 == 0);
-            }
+            location.last = ((i + 1) == length);
+            location.first = (i == 0);
+            location.lastOfRow = ((i + 1) % 3 == 0);
 
             return location;
         });
