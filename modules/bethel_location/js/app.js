@@ -75,9 +75,6 @@ App.ModalView = Ember.Mixin.create({
 App.NewLocationView = Ember.View.extend(App.ModalView, {
     modalTitle: "Add a Location",
     saveButton: "Add Location",
-    model: function() {
-        return App.Location.createRecord();
-    },
     actions: {
         submit: function() {
             var location = App.Location.store.createRecord('location');
