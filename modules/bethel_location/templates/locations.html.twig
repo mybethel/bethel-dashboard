@@ -13,6 +13,10 @@
   {{/if}}
     <div class="col-sm-6 col-md-4">
       <div class="thumbnail">
+        <div class="btn-group">
+          <button type="button" class="btn btn-sm btn-default"><span class="glyphicon glyphicon-pencil"></span></button>
+          <button type="button" class="btn btn-sm btn-danger"><span class="glyphicon glyphicon-ban-circle"></span></button>
+        </div>
         <img src="http://maps.googleapis.com/maps/api/staticmap?center={{unbound location.loc.[1]}},{{unbound location.loc.[0]}}&zoom=17&size=300x200&maptype=roadmap
 &markers=color:0x1591b5%7C{{unbound location.loc.[1]}},{{unbound location.loc.[0]}}&sensor=false&key=AIzaSyCasoNnO-7ZHrH_NBcCU_BBed6duq8NvJg" alt="{{unbound location.address}}">
         <div class="caption">

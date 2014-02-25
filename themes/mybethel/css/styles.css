@@ -338,3 +338,14 @@ body.toolbar-tray-open #sidebar-first { top: 129px; }
   margin-top: 10px;
   margin-bottom: 5px;
 }
+
+.page-locations div.thumbnail .btn-group {
+  position: absolute;
+  right: 25px;
+  top: 10px;
+  display: none;
+}
+
+.page-locations div.thumbnail:hover .btn-group {
+  display: block;
+}
